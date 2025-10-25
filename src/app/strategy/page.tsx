@@ -433,7 +433,7 @@ function ContentPlanTab() {
                         </Card>
                          <Card>
                             <CardHeader><CardTitle className="text-base flex justify-between"><span>🛁 Rotina do Irmão do Yamal</span><Badge variant="secondary">Lifestyle</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Mostrar pequenos hábitos: banho frio, comer simples, alongar → texto motivacional.</p></Content>
+                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Mostrar pequenos hábitos: banho frio, comer simples, alongar → texto motivacional.</p></CardContent>
                         </Card>
                          <Card>
                             <CardHeader><CardTitle className="text-base flex justify-between"><span>💪 Sem Desculpas</span><Badge variant="secondary">Disciplina</Badge></CardTitle></CardHeader>
@@ -505,3 +505,5 @@ export default function StrategyPage() {
         </div>
     )
 }
+
+    
