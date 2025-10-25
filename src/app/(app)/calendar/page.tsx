@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,8 +32,8 @@ import type { CalendarEvent, ContentType } from '@/lib/types';
 import { format, isSameDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, Timestamp, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 const platformIcons: Record<CalendarEvent['platform'], React.ReactNode> = {
@@ -89,14 +89,15 @@ export default function CalendarPage() {
     setAddDialogOpen(false);
   };
   
-  const handleEditEvent = (eventData: Omit<CalendarEvent, 'id' | 'date'>) => {
+  const handleEditEvent = async (eventData: Omit<CalendarEvent, 'id' | 'date'>) => {
     if (!selectedEvent || !user) return;
     const eventDoc = doc(firestore, `users/${user.uid}/calendarEvents`, selectedEvent.id);
-    const updatedData = { ...eventData };
-    if (selectedEvent.date) {
-        (updatedData as CalendarEvent).date = selectedEvent.date
-    }
-    updateDocumentNonBlocking(eventDoc, updatedData);
+    // Keep the original date, as we are not editing it in this dialog
+    const updatedData = { 
+      ...eventData,
+      date: selectedEvent.date
+    };
+    await updateDoc(eventDoc, updatedData);
     setEditDialogOpen(false);
     setSelectedEvent(null);
   }
@@ -213,7 +214,7 @@ export default function CalendarPage() {
                 <PlusCircle className="mr-2" /> Adicionar Post
               </Button>
             </DialogTrigger>
-            <EventDialog title="Agendar um Novo Post" buttonText="Agendar Post" onConfirm={handleAddEvent} />
+            <EventDialog title="Agendar um Novo Post" buttonText="Agendar Post" onConfirm={handleAddEvent} onOpenChange={setAddDialogOpen} />
           </Dialog>
 
           {/* Edit Dialog */}
@@ -223,6 +224,7 @@ export default function CalendarPage() {
               buttonText="Guardar Alterações" 
               onConfirm={handleEditEvent} 
               event={selectedEvent} 
+              onOpenChange={setEditDialogOpen}
             />
           </Dialog>
 
@@ -253,33 +255,36 @@ function EventDialog({
     buttonText, 
     onConfirm, 
     event,
+    onOpenChange,
 }: { 
     title: string, 
     buttonText: string,
     onConfirm: (event: Omit<CalendarEvent, 'id' | 'date'>) => void,
     event?: CalendarEvent | null,
+    onOpenChange: (isOpen: boolean) => void,
 }) {
   const [postTitle, setPostTitle] = useState('');
   const [platform, setPlatform] = useState<'Instagram' | 'TikTok' | 'YouTube' | undefined>();
   const [contentType, setContentType] = useState<ContentType | undefined>();
 
-  useState(() => {
+  useEffect(() => {
     if (event) {
       setPostTitle(event.title);
       setPlatform(event.platform);
       setContentType(event.contentType);
     } else {
+      // Reset for new event
       setPostTitle('');
       setPlatform(undefined);
       setContentType(undefined);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event]);
 
 
   const handleSubmit = () => {
     if (postTitle && platform && contentType) {
       onConfirm({ title: postTitle, platform, contentType });
+      onOpenChange(false);
     }
   };
 
@@ -324,18 +329,11 @@ function EventDialog({
         </div>
       </div>
       <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline">Cancelar</Button>
-        </DialogClose>
-        <DialogClose asChild>
-          <Button onClick={handleSubmit} disabled={!postTitle || !platform || !contentType}>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+        <Button onClick={handleSubmit} disabled={!postTitle || !platform || !contentType}>
             {buttonText}
-          </Button>
-        </DialogClose>
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
 }
-
-
-    

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ContentIdea, ContentType } from '@/lib/types';
 import {
   Card,
@@ -132,7 +132,7 @@ export default function IdeasPage() {
                     <Plus className="mr-2 h-4 w-4" /> Adicionar Ideia
                 </Button>
             </DialogTrigger>
-            <AddIdeaDialog onAddIdea={addIdea} />
+            <AddIdeaDialog onAddIdea={addIdea} onOpenChange={setAddDialogOpen} />
         </Dialog>
       </div>
 
@@ -181,6 +181,7 @@ export default function IdeasPage() {
         <EditIdeaDialog
           idea={selectedIdea}
           onEditIdea={editIdea}
+          onOpenChange={setEditDialogOpen}
         />
       </Dialog>
     </div>
@@ -234,7 +235,7 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit 
     );
 }
 
-function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'| 'createdAt'>) => void }) {
+function AddIdeaDialog({ onAddIdea, onOpenChange }: { onAddIdea: (idea: Omit<ContentIdea, 'id'| 'createdAt'>) => void, onOpenChange: (isOpen: boolean) => void }) {
     const [description, setDescription] = useState('');
     const [videoLink, setVideoLink] = useState('');
     const [contentType, setContentType] = useState<ContentType | ''>('');
@@ -251,6 +252,7 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
             setDescription('');
             setVideoLink('');
             setContentType('');
+            onOpenChange(false);
         }
     }
 
@@ -283,22 +285,22 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button onClick={handleSubmit} disabled={!description || !contentType}>Adicionar Ideia</Button>
             </DialogFooter>
         </DialogContent>
     );
 }
 
-function EditIdeaDialog({ idea, onEditIdea }: { idea: ContentIdea | null, onEditIdea: (data: Partial<Omit<ContentIdea, 'id' | 'createdAt'>>) => void }) {
+function EditIdeaDialog({ idea, onEditIdea, onOpenChange }: { idea: ContentIdea | null, onEditIdea: (data: Partial<Omit<ContentIdea, 'id' | 'createdAt'>>) => void, onOpenChange: (isOpen: boolean) => void }) {
     const [description, setDescription] = useState('');
     const [videoLink, setVideoLink] = useState('');
     const [contentType, setContentType] = useState<ContentType | ''>('');
 
-    useState(() => {
+    useEffect(() => {
       if (idea) {
         setDescription(idea.description);
-        setVideoLink(idea.videoLink);
+        setVideoLink(idea.videoLink || '');
         setContentType(idea.contentType);
       }
     }, [idea]);
@@ -310,6 +312,7 @@ function EditIdeaDialog({ idea, onEditIdea }: { idea: ContentIdea | null, onEdit
                 videoLink,
                 contentType,
             });
+            onOpenChange(false);
         }
     }
 
@@ -344,7 +347,7 @@ function EditIdeaDialog({ idea, onEditIdea }: { idea: ContentIdea | null, onEdit
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button onClick={handleSubmit} disabled={!description || !contentType}>Guardar Alterações</Button>
             </DialogFooter>
         </DialogContent>
@@ -418,5 +421,3 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
         </Card>
     );
 }
-
-    
