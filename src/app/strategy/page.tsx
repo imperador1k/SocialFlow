@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -340,7 +341,7 @@ function ContentPlanTab() {
       <section>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Plano para TikTok & Instagram Reels</h2>
         <Tabs value={activeTikTokTab} onValueChange={setActiveTikTokTab} className="w-full">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="plano-humor">🎭 Humor & Memes (40%)</TabsTrigger>
                 <TabsTrigger value="plano-skills">⚽️ Skills & Highlights (35%)</TabsTrigger>
                 <TabsTrigger value="plano-mindset">📈 Mindset & Rotina (25%)</TabsTrigger>
@@ -359,7 +360,7 @@ function ContentPlanTab() {
                                 <CardTitle className="text-base flex justify-between"><span>👨‍👦 "Irmão do Lamine Yamal"</span><Badge variant="secondary">Série</Badge></CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm"><strong>🎬 Hook:</strong> "Olá, eu sou o irmão do Lamine Yamal…"</p>
+                                <p className="text-sm"><strong>🎬 Hook:</strong> "Saudações Meus Caros, eu sou o irmão do Lamine Yamal…"</p>
                                 <p className="text-sm"><strong>📹 Execução:</strong> Mostras um skill, depois falhas de propósito → termina com "Wasted" ou "Missão Falhada".</p>
                             </CardContent>
                         </Card>
