@@ -144,11 +144,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Painel lateral "Mais" para Mobile */}
       <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="h-auto rounded-t-lg p-0">
+        <SheetContent side="left" className="h-auto rounded-r-lg p-0">
           <SheetHeader className="flex-row items-center justify-between border-b p-4">
             <SheetTitle>Menu</SheetTitle>
              <Button variant="ghost" size="icon" onClick={() => setSheetOpen(false)}>
-                <X className="h-5 w-5" />
              </Button>
           </SheetHeader>
           <div className="p-4">
