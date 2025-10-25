@@ -56,7 +56,7 @@ export default function CalendarPage() {
   
   const { data: events = [] } = useCollection<Omit<CalendarEvent, 'id'>>(eventsCollection);
 
-  const eventsWithDateObjects = events.map(event => ({
+  const eventsWithDateObjects = (events || []).map(event => ({
     ...event,
     date: (event.date as Timestamp).toDate(),
   }))
