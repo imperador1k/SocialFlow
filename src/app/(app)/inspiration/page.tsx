@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import type { Creator, ContentType } from '@/lib/types';
