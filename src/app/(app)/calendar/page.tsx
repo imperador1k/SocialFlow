@@ -14,16 +14,26 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Instagram, Youtube } from 'lucide-react';
+import { PlusCircle, Instagram, Youtube, Edit, Trash2 } from 'lucide-react';
 import type { CalendarEvent, ContentType } from '@/lib/types';
-import { format, isSameDay, toDate } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, Timestamp, serverTimestamp, query, where } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, Timestamp, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 const platformIcons: Record<CalendarEvent['platform'], React.ReactNode> = {
@@ -45,16 +55,20 @@ const contentTypeColors: Record<ContentType, string> = {
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const eventsCollection = useMemoFirebase(() => {
+  const eventsCollectionRef = useMemoFirebase(() => {
     if(!user) return null;
     return collection(firestore, `users/${user.uid}/calendarEvents`);
   }, [firestore, user]);
   
-  const { data: events = [] } = useCollection<Omit<CalendarEvent, 'id'>>(eventsCollection);
+  const { data: events = [] } = useCollection<CalendarEvent>(eventsCollectionRef);
 
   const eventsWithDateObjects = (events || []).map(event => ({
     ...event,
@@ -66,13 +80,43 @@ export default function CalendarPage() {
   const eventDates = eventsWithDateObjects.map((event) => event.date);
 
   const handleAddEvent = (eventData: Omit<CalendarEvent, 'id' | 'date'>) => {
-    if (!date || !eventsCollection) return;
+    if (!date || !eventsCollectionRef) return;
     const newEvent = {
       ...eventData,
       date: Timestamp.fromDate(date),
     };
-    addDocumentNonBlocking(eventsCollection, newEvent);
-    setIsDialogOpen(false);
+    addDocumentNonBlocking(eventsCollectionRef, newEvent);
+    setAddDialogOpen(false);
+  };
+  
+  const handleEditEvent = (eventData: Omit<CalendarEvent, 'id' | 'date'>) => {
+    if (!selectedEvent || !user) return;
+    const eventDoc = doc(firestore, `users/${user.uid}/calendarEvents`, selectedEvent.id);
+    const updatedData = { ...eventData };
+    if (selectedEvent.date) {
+        (updatedData as CalendarEvent).date = selectedEvent.date
+    }
+    updateDocumentNonBlocking(eventDoc, updatedData);
+    setEditDialogOpen(false);
+    setSelectedEvent(null);
+  }
+
+  const handleDeleteEvent = () => {
+    if (!selectedEvent || !user) return;
+    const eventDoc = doc(firestore, `users/${user.uid}/calendarEvents`, selectedEvent.id);
+    deleteDocumentNonBlocking(eventDoc);
+    setDeleteDialogOpen(false);
+    setSelectedEvent(null);
+  }
+  
+  const openEditDialog = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -137,13 +181,21 @@ export default function CalendarPage() {
               <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                 {selectedDayEvents.length > 0 ? (
                   selectedDayEvents.map((event) => (
-                    <div key={event.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                    <div key={event.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 group relative">
                        <div className="p-2 bg-muted rounded-full text-muted-foreground mt-1">{platformIcons[event.platform]}</div>
                        <div className="flex-grow">
                             <p className="font-medium text-sm leading-tight">{event.title}</p>
                             <Badge variant="outline" className={`mt-1 text-xs ${contentTypeColors[event.contentType]}`}>
                                 {event.contentType}
                             </Badge>
+                       </div>
+                       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(event)}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/80 hover:text-destructive" onClick={() => openDeleteDialog(event)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
                        </div>
                     </div>
                   ))
@@ -155,47 +207,96 @@ export default function CalendarPage() {
               </div>
             </CardContent>
           </Card>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full" disabled={!date || !user}>
                 <PlusCircle className="mr-2" /> Adicionar Post
               </Button>
             </DialogTrigger>
-            <AddEventDialog onAddEvent={handleAddEvent} />
+            <EventDialog title="Agendar um Novo Post" buttonText="Agendar Post" onConfirm={handleAddEvent} />
           </Dialog>
+
+          {/* Edit Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if (!isOpen) setSelectedEvent(null); }}>
+            <EventDialog 
+              title="Editar Post Agendado" 
+              buttonText="Guardar Alterações" 
+              onConfirm={handleEditEvent} 
+              event={selectedEvent} 
+            />
+          </Dialog>
+
+          {/* Delete Alert Dialog */}
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={(isOpen) => { setDeleteDialogOpen(isOpen); if (!isOpen) setSelectedEvent(null); }}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isto irá apagar permanentemente o post agendado.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Apagar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
       </div>
     </div>
   );
 }
 
-function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent, 'id' | 'date'>) => void }) {
-  const [title, setTitle] = useState('');
-  const [platform, setPlatform] = useState<'Instagram' | 'TikTok' | 'YouTube'>();
-  const [contentType, setContentType] = useState<ContentType>();
+function EventDialog({ 
+    title, 
+    buttonText, 
+    onConfirm, 
+    event,
+}: { 
+    title: string, 
+    buttonText: string,
+    onConfirm: (event: Omit<CalendarEvent, 'id' | 'date'>) => void,
+    event?: CalendarEvent | null,
+}) {
+  const [postTitle, setPostTitle] = useState('');
+  const [platform, setPlatform] = useState<'Instagram' | 'TikTok' | 'YouTube' | undefined>();
+  const [contentType, setContentType] = useState<ContentType | undefined>();
 
-  const handleSubmit = () => {
-    if (title && platform && contentType) {
-      onAddEvent({ title, platform, contentType });
-      setTitle('');
+  useState(() => {
+    if (event) {
+      setPostTitle(event.title);
+      setPlatform(event.platform);
+      setContentType(event.contentType);
+    } else {
+      setPostTitle('');
       setPlatform(undefined);
       setContentType(undefined);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event]);
+
+
+  const handleSubmit = () => {
+    if (postTitle && platform && contentType) {
+      onConfirm({ title: postTitle, platform, contentType });
     }
   };
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Agendar um Novo Post</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
         <div className="space-y-2">
           <Label htmlFor="title">Título do Post</Label>
-          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ex: Novo vídeo sobre..." />
+          <Input id="title" value={postTitle} onChange={(e) => setPostTitle(e.target.value)} placeholder="ex: Novo vídeo sobre..." />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="platform">Plataforma</Label>
-            <Select onValueChange={(v) => setPlatform(v as any)}>
+            <Select value={platform} onValueChange={(v) => setPlatform(v as any)}>
               <SelectTrigger id="platform">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
@@ -208,7 +309,7 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
           </div>
           <div className="space-y-2">
             <Label htmlFor="contentType">Tipo de Conteúdo</Label>
-            <Select onValueChange={(v) => setContentType(v as any)}>
+            <Select value={contentType} onValueChange={(v) => setContentType(v as any)}>
               <SelectTrigger id="contentType">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
@@ -226,10 +327,15 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
         <DialogClose asChild>
           <Button variant="outline">Cancelar</Button>
         </DialogClose>
-        <Button onClick={handleSubmit} disabled={!title || !platform || !contentType}>
-          Agendar Post
-        </Button>
+        <DialogClose asChild>
+          <Button onClick={handleSubmit} disabled={!postTitle || !platform || !contentType}>
+            {buttonText}
+          </Button>
+        </DialogClose>
       </DialogFooter>
     </DialogContent>
   );
 }
+
+
+    
