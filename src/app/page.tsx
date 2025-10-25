@@ -1,4 +1,4 @@
-import { generateInspirationalQuote } from "@/ai/flows/generate-inspirational-quote";
+
 import { Activity, Users } from "lucide-react";
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';
@@ -12,17 +12,11 @@ import {
 import { DashboardCharts } from "@/components/dashboard-charts";
 
 
-async function InspirationalQuoteCard() {
-    let quoteData;
-    try {
-        quoteData = await generateInspirationalQuote({});
-    } catch (error) {
-        console.error("Failed to generate inspirational quote:", error);
-        quoteData = {
-            quote: "The secret of getting ahead is getting started.",
-            imageUrl: placeholderImages.inspirational_quote_fallback.src,
-        };
-    }
+function InspirationalQuoteCard() {
+    const quoteData = {
+        quote: "Mais vale morrer de pé do que viver uma vida ajoelhado",
+        imageUrl: placeholderImages.inspirational_quote_fallback.src,
+    };
 
     return (
         <Card className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg">
