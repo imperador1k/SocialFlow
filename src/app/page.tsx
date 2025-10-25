@@ -87,7 +87,7 @@ function InspirationalQuoteCard() {
     };
 
     const handleCropComplete = async () => {
-        if (!imgRef.current || !crop?.width || !crop?.height || !userProfileDoc) return;
+        if (!imgRef.current || !crop?.width || !crop?.height || !userProfileDoc || !user) return;
         setIsSaving(true);
         setCropModalOpen(false);
 
@@ -118,7 +118,7 @@ function InspirationalQuoteCard() {
         const base64Image = canvas.toDataURL('image/jpeg');
 
         const storage = getStorage();
-        const photoRef = storageRef(storage, `users/${user?.uid}/motivational-photo.jpg`);
+        const photoRef = storageRef(storage, `users/${user.uid}/motivational-photo.jpg`);
 
         try {
             await uploadString(photoRef, base64Image, 'data_url');
@@ -168,7 +168,7 @@ function InspirationalQuoteCard() {
                 variant="secondary" 
                 className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isSaving}
+                disabled={isSaving || !user}
             >
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
                 Mudar Foto
@@ -259,7 +259,7 @@ export default function DashboardPage() {
                     <CardContent>
                         {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                             <>
-                                <div className="text-2xl font-bold">{latestMetrics?.followers.toLocaleString() || 'N/A'}</div>
+                                <div className="text-2xl font-bold">{latestMetrics?.followers?.toLocaleString() || 'N/A'}</div>
                                 <p className="text-xs text-muted-foreground">Dados mais recentes</p>
                             </>
                         )}
