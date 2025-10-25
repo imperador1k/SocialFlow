@@ -63,8 +63,6 @@ function centerAspectCrop(
     crop: PixelCrop,
   ): Promise<string> {
     const canvas = document.createElement('canvas');
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
     canvas.width = crop.width;
     canvas.height = crop.height;
     const ctx = canvas.getContext('2d');
@@ -72,6 +70,9 @@ function centerAspectCrop(
     if (!ctx) {
       throw new Error('No 2d context');
     }
+  
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
   
     ctx.drawImage(
       image,
@@ -117,7 +118,6 @@ function ProfileSettings() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
   
   const [name, setName] = useState('');
-  const [newAvatarCropped, setNewAvatarCropped] = useState<string | null>(null);
   const [displayAvatar, setDisplayAvatar] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,11 +127,13 @@ function ProfileSettings() {
   const [isCropModalOpen, setCropModalOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // New state to trigger the upload effect
+  const [newAvatarCropped, setNewAvatarCropped] = useState<string | null>(null);
   
   const originalName = userProfile?.name || user?.displayName || '';
-  const originalAvatar = userProfile?.avatar || user?.photoURL || '';
   
-  const hasChanges = name !== originalName || !!newAvatarCropped;
+  const hasNameChanged = name !== originalName && name !== '';
 
   useEffect(() => {
     if (userProfile) {
@@ -140,26 +142,27 @@ function ProfileSettings() {
     }
   }, [userProfile, user]);
 
+
+  // useEffect to handle the entire upload and update flow
   useEffect(() => {
     if (!newAvatarCropped || !user || !userProfileDoc) return;
-    
-    const uploadImage = async () => {
+
+    const uploadAndSaveAvatar = async () => {
         setIsSaving(true);
         try {
             const storage = getStorage();
             const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
+            
             await uploadString(avatarRef, newAvatarCropped, 'data_url');
             const finalAvatarUrl = await getDownloadURL(avatarRef);
 
             await updateDoc(userProfileDoc, { avatar: finalAvatarUrl });
             
-            setDisplayAvatar(finalAvatarUrl); 
-            setNewAvatarCropped(null); // Reset cropped image state
+            setDisplayAvatar(finalAvatarUrl); // Update UI with the final URL from storage
             toast({
                 title: "Avatar Atualizado",
                 description: "A sua nova foto de perfil foi guardada.",
             });
-
         } catch (e) {
             console.error("Error uploading avatar: ", e);
             toast({
@@ -167,13 +170,16 @@ function ProfileSettings() {
                 title: "Erro ao Guardar Avatar",
                 description: "Não foi possível guardar a sua nova foto.",
             });
+            // Revert optimistic UI update on error
+            setDisplayAvatar(userProfile?.avatar || user?.photoURL || '');
         } finally {
             setIsSaving(false);
+            setNewAvatarCropped(null); // Reset the trigger
         }
     };
     
-    uploadImage();
-  }, [newAvatarCropped, user, userProfileDoc, toast]);
+    uploadAndSaveAvatar();
+  }, [newAvatarCropped, user, userProfileDoc, toast, userProfile?.avatar, user?.photoURL]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,8 +205,8 @@ function ProfileSettings() {
     setName(event.target.value);
   }
 
-  const handleTriggerSave = async () => {
-    if (!user || !userProfileDoc || name === originalName) return;
+  const handleTriggerNameSave = async () => {
+    if (!user || !userProfileDoc || !hasNameChanged) return;
 
     setIsSaving(true);
     try {
@@ -225,8 +231,10 @@ function ProfileSettings() {
     if (imgRef.current && completedCrop?.width && completedCrop?.height) {
         try {
             const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
+            // Set the state that triggers the useEffect for upload
             setNewAvatarCropped(croppedImageBase64); 
-            setDisplayAvatar(croppedImageBase64); // Show preview immediately
+            // Optimistically update the UI to show the cropped image immediately
+            setDisplayAvatar(croppedImageBase64); 
         } catch (e) {
             console.error("Error cropping image:", e);
             toast({
@@ -288,7 +296,7 @@ function ProfileSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
-            <Input id="name" value={name} onChange={handleNameChange} />
+            <Input id="name" value={name} onChange={handleNameChange} disabled={isSaving} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -296,7 +304,7 @@ function ProfileSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleTriggerSave} disabled={isSaving || name === originalName}>
+          <Button onClick={handleTriggerNameSave} disabled={isSaving || !hasNameChanged}>
             {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Guardar Alterações
             </Button>
@@ -338,12 +346,10 @@ function ProfileSettings() {
             <DialogClose asChild>
                 <Button variant="outline" disabled={isSaving}>Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleCropComplete} disabled={isSaving || !completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
+            <Button onClick={handleCropComplete} disabled={!completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
-
-    

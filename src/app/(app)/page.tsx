@@ -55,8 +55,6 @@ function centerAspectCrop(
     crop: PixelCrop,
   ): Promise<string> {
     const canvas = document.createElement('canvas');
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
     canvas.width = crop.width;
     canvas.height = crop.height;
     const ctx = canvas.getContext('2d');
@@ -64,7 +62,10 @@ function centerAspectCrop(
     if (!ctx) {
       throw new Error('No 2d context');
     }
-  
+    
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+
     ctx.drawImage(
       image,
       crop.x * scaleX,
@@ -101,8 +102,11 @@ function InspirationalQuoteCard() {
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [isCropModalOpen, setCropModalOpen] = useState(false);
+    
+    // New state to trigger the upload effect
     const [croppedImage, setCroppedImage] = useState<string | null>(null);
 
+    // useEffect to handle the entire upload and update flow
     useEffect(() => {
         if (!croppedImage || !userProfileDoc || !user) {
           return;
@@ -123,7 +127,6 @@ function InspirationalQuoteCard() {
               title: "Foto Atualizada!",
               description: "A sua nova foto de motivação foi guardada.",
             });
-            setCroppedImage(null); // Reset after upload
           } catch (e) {
             console.error("Error uploading motivational photo: ", e);
             toast({
@@ -133,6 +136,7 @@ function InspirationalQuoteCard() {
             });
           } finally {
             setIsSaving(false);
+            setCroppedImage(null); // Reset the trigger
           }
         };
     
@@ -164,6 +168,7 @@ function InspirationalQuoteCard() {
         
         try {
           const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
+          // This state update will trigger the useEffect
           setCroppedImage(croppedImageBase64);
         } catch (e) {
           console.error("Error cropping image:", e);
