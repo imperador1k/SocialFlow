@@ -32,8 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import { useDoc, useFirebase, useMemoFirebase, useAuth } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import type { UserProfile } from '@/lib/types';
 import { signOut } from 'firebase/auth';
@@ -125,14 +124,14 @@ function ProfileSettings() {
   }
 
   const handleSaveChanges = async () => {
-    if (!userProfileDoc) return;
+    if (!userProfileDoc || !user) return;
     setIsSaving(true);
-    let finalAvatarUrl = avatar;
+    let finalAvatarUrl = userProfile?.avatar;
 
-    // Only upload if a new avatar has been set via cropping
+    // Only upload if a new avatar has been set via cropping (it will be a data URI)
     if (avatar.startsWith('data:image')) {
         const storage = getStorage();
-        const avatarRef = storageRef(storage, `avatars/${user?.uid}/profile.jpg`);
+        const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
         try {
             await uploadString(avatarRef, avatar, 'data_url');
             finalAvatarUrl = await getDownloadURL(avatarRef);
@@ -148,18 +147,28 @@ function ProfileSettings() {
         }
     }
 
-    const updatedProfile = {
-      name: name,
-      avatar: finalAvatarUrl
-    };
+    try {
+        const updatedProfile = {
+          name: name,
+          avatar: finalAvatarUrl
+        };
 
-    updateDocumentNonBlocking(userProfileDoc, updatedProfile);
-    
-    toast({
-      title: "Perfil Atualizado",
-      description: "As suas alterações foram guardadas com sucesso.",
-    });
-    setIsSaving(false);
+        await updateDoc(userProfileDoc, updatedProfile);
+        
+        toast({
+          title: "Perfil Atualizado",
+          description: "As suas alterações foram guardadas com sucesso.",
+        });
+    } catch(e) {
+        console.error("Error saving profile: ", e);
+        toast({
+            variant: 'destructive',
+            title: "Erro ao Guardar",
+            description: "Não foi possível guardar as alterações no seu perfil.",
+        });
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   const handleCropComplete = () => {
@@ -167,7 +176,7 @@ function ProfileSettings() {
         const canvas = document.createElement('canvas');
         const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
         const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
-        const pixelRatio = window.devicePixelRatio;
+        const pixelRatio = 1; // You can increase this for higher res, but 1 is usually fine
         canvas.width = crop.width * pixelRatio;
         canvas.height = crop.height * pixelRatio;
         const ctx = canvas.getContext('2d');
@@ -202,13 +211,16 @@ function ProfileSettings() {
         description: 'Não foi possível terminar a sessão. Por favor, tente novamente.',
       });
     });
-    // No need to redirect, AuthGate will handle it.
+    // The layout's effect will handle the redirect.
   };
 
 
   if (isProfileLoading) {
     return <p>A carregar perfil...</p>;
   }
+
+  const currentAvatar = avatar || userProfile?.avatar || user?.photoURL;
+  const currentName = name || userProfile?.name || user?.displayName;
 
   return (
     <div className="space-y-8">
@@ -220,8 +232,8 @@ function ProfileSettings() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={avatar} alt={name} />
-              <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
+              <AvatarImage src={currentAvatar} alt={currentName} />
+              <AvatarFallback>{currentName?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
               <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />

@@ -14,11 +14,10 @@ import { DashboardCharts } from "@/components/dashboard-charts";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
-import { doc, collection, orderBy, query, limit, DocumentReference, DocumentData } from 'firebase/firestore';
+import { doc, collection, orderBy, query, limit, DocumentReference, DocumentData, updateDoc } from 'firebase/firestore';
 import type { PerformanceMetric, UserProfile } from '@/lib/types';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import {
   Dialog,
@@ -123,7 +122,7 @@ function InspirationalQuoteCard() {
         try {
             await uploadString(photoRef, base64Image, 'data_url');
             const downloadURL = await getDownloadURL(photoRef);
-            updateDocumentNonBlocking(userProfileDoc, { motivationalPhotoUrl: downloadURL });
+            await updateDoc(userProfileDoc, { motivationalPhotoUrl: downloadURL });
             toast({
                 title: "Foto Atualizada!",
                 description: "A sua nova foto de motivação foi guardada.",
