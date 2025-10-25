@@ -1,15 +1,16 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { User, Bell, Palette, Lock, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import placeholderImages from '@/lib/placeholder-images.json';
+import { useToast } from '@/hooks/use-toast';
 
 const settingsNav = [
   { name: 'Perfil', icon: User },
@@ -18,7 +19,7 @@ const settingsNav = [
   { name: 'Segurança', icon: Lock },
 ];
 
-const mockUser = {
+const initialUser = {
   name: 'Valter',
   email: 'valter@email.com',
   avatar: placeholderImages.creators[4].src,
@@ -34,7 +35,7 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Gerencie as definições e preferências da sua conta.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-        <nav className="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:col-span-1">
+        <nav className="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:col-span-1 pb-2 lg:pb-0">
           {settingsNav.map((item) => (
             <Button
               key={item.name}
@@ -60,6 +61,34 @@ export default function SettingsPage() {
 }
 
 function ProfileSettings() {
+    const { toast } = useToast();
+    const [user, setUser] = useState(initialUser);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setUser(prev => ({...prev, avatar: reader.result as string}));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setUser(prev => ({...prev, name: event.target.value}));
+    }
+
+    const handleSaveChanges = () => {
+        // Here you would typically send the data to a server
+        console.log("Saving data:", user);
+        toast({
+            title: "Perfil Atualizado",
+            description: "As suas alterações foram guardadas com sucesso.",
+        });
+    }
+
     return (
         <div className="space-y-8">
             <Card>
@@ -70,25 +99,26 @@ function ProfileSettings() {
                 <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                    <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
-                    <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-2">
-                        <Button>Mudar Foto</Button>
+                        <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
+                        <Button onClick={() => fileInputRef.current?.click()}>Mudar Foto</Button>
                         <p className="text-xs text-muted-foreground">JPG, GIF ou PNG. 1MB no máximo.</p>
                     </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="name">Nome</Label>
-                    <Input id="name" defaultValue={mockUser.name} />
+                    <Input id="name" value={user.name} onChange={handleNameChange} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue={mockUser.email} />
+                    <Input id="email" type="email" value={user.email} readOnly className="bg-muted/50 cursor-not-allowed" />
                 </div>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
-                <Button>Guardar Alterações</Button>
+                <Button onClick={handleSaveChanges}>Guardar Alterações</Button>
                 </CardFooter>
             </Card>
 
@@ -123,3 +153,5 @@ function PlaceholderSection({ title }: { title: string }) {
       </Card>
     );
   }
+
+    
