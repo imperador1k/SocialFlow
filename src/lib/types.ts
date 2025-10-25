@@ -1,32 +1,44 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export interface Task {
-  id: number;
+  id: string;
   text: string;
   completed: boolean;
+  createdAt?: Timestamp;
 }
 
 export type ContentType = "Humor/Meme" | "Skill/Treino" | "Mindset/Rotina" | "YouTube";
 
 export interface ContentIdea {
-  id: number;
+  id: string;
   description: string;
   videoLink: string;
   contentType: ContentType;
   isFavorite: boolean;
   isCompleted: boolean;
+  createdAt?: Timestamp;
 }
 
 export interface Creator {
-  id: number;
+  id: string;
   name: string;
   photoUrl: string;
   category: ContentType;
   socialLink: string;
+  createdAt?: Timestamp;
 }
 
 export interface CalendarEvent {
-    id: number;
+    id: string;
     title: string;
-    date: Date;
+    date: Date | Timestamp;
     platform: 'Instagram' | 'TikTok' | 'YouTube';
     contentType: ContentType;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
 }

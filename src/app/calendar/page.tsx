@@ -19,41 +19,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { PlusCircle, Instagram, Youtube } from 'lucide-react';
 import type { CalendarEvent, ContentType } from '@/lib/types';
-import { add, format, isSameDay } from 'date-fns';
+import { format, isSameDay, toDate } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, Timestamp, serverTimestamp, query, where } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const initialEvents: CalendarEvent[] = [
-  {
-    id: 1,
-    title: 'New Reel: "Minha Rotina Matinal"',
-    date: new Date(),
-    platform: 'Instagram',
-    contentType: 'Mindset/Rotina',
-  },
-  {
-    id: 2,
-    title: 'Shorts: "3 Dicas para Mirar Melhor"',
-    date: new Date(),
-    platform: 'YouTube',
-    contentType: 'Skill/Treino',
-  },
-  {
-    id: 3,
-    title: 'TikTok: Momento engraçado de gameplay',
-    date: add(new Date(), { days: 2 }),
-    platform: 'TikTok',
-    contentType: 'Humor/Meme',
-  },
-  {
-    id: 4,
-    title: 'Vídeo Longo: "Como eu cresci meu canal"',
-    date: add(new Date(), { days: 4 }),
-    platform: 'YouTube',
-    contentType: 'YouTube',
-  },
-];
 
-const platformIcons = {
+const platformIcons: Record<CalendarEvent['platform'], React.ReactNode> = {
   Instagram: <Instagram className="h-4 w-4" />,
   TikTok: (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -71,21 +44,34 @@ const contentTypeColors: Record<ContentType, string> = {
 };
 
 export default function CalendarPage() {
-  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
 
-  const selectedDayEvents = events.filter((event) => date && isSameDay(event.date, date)).sort((a,b) => a.date.getTime() - b.date.getTime());
-  const eventDates = events.map((event) => event.date);
+  const eventsCollection = useMemoFirebase(() => {
+    if(!user) return null;
+    return collection(firestore, `users/${user.uid}/calendarEvents`);
+  }, [firestore, user]);
+  
+  const { data: events = [] } = useCollection<Omit<CalendarEvent, 'id'>>(eventsCollection);
+
+  const eventsWithDateObjects = events.map(event => ({
+    ...event,
+    date: (event.date as Timestamp).toDate(),
+  }))
+
+
+  const selectedDayEvents = eventsWithDateObjects.filter((event) => date && isSameDay(event.date, date)).sort((a,b) => a.date.getTime() - b.date.getTime());
+  const eventDates = eventsWithDateObjects.map((event) => event.date);
 
   const handleAddEvent = (eventData: Omit<CalendarEvent, 'id' | 'date'>) => {
-    if (!date) return;
-    const newEvent: CalendarEvent = {
-      id: Date.now(),
-      date: date,
+    if (!date || !eventsCollection) return;
+    const newEvent = {
       ...eventData,
+      date: Timestamp.fromDate(date),
     };
-    setEvents([...events, newEvent]);
+    addDocumentNonBlocking(eventsCollection, newEvent);
     setIsDialogOpen(false);
   };
 
@@ -171,7 +157,7 @@ export default function CalendarPage() {
           </Card>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full" disabled={!date}>
+              <Button className="w-full" disabled={!date || !user}>
                 <PlusCircle className="mr-2" /> Adicionar Post
               </Button>
             </DialogTrigger>

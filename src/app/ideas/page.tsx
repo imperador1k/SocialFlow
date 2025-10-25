@@ -36,7 +36,6 @@ import {
   Plus,
   Star,
   Trash2,
-  CheckCircle2,
   ExternalLink,
   Lightbulb,
   Loader2,
@@ -45,58 +44,56 @@ import {
 import { generateContentIdeas } from '@/ai/flows/generate-content-ideas';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-
-const initialIdeas: ContentIdea[] = [
-  {
-    id: 1,
-    description: 'Uma compilação divertida de falhas em jogos da última semana.',
-    videoLink: 'https://youtube.com/example1',
-    contentType: 'Humor/Meme',
-    isFavorite: true,
-    isCompleted: false,
-  },
-  {
-    id: 2,
-    description: 'Tutorial sobre como dominar um combo difícil no novo jogo de luta.',
-    videoLink: '',
-    contentType: 'Skill/Treino',
-    isFavorite: false,
-    isCompleted: false,
-  },
-  {
-    id: 3,
-    description: 'Um dia na minha vida como criador de conteúdo em tempo integral.',
-    videoLink: 'https://tiktok.com/example2',
-    contentType: 'Mindset/Rotina',
-    isFavorite: false,
-    isCompleted: true,
-  },
-];
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'];
 type FilterType = ContentType | 'All' | 'Favorites';
 
 
 export default function IdeasPage() {
-  const [ideas, setIdeas] = useState<ContentIdea[]>(initialIdeas);
   const [filter, setFilter] = useState<FilterType>('All');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
-  const toggleFavorite = (id: number) => {
-    setIdeas(ideas.map((idea) => (idea.id === id ? { ...idea, isFavorite: !idea.isFavorite } : idea)));
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const ideasCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/contentIdeas`);
+  }, [firestore, user]);
+
+  const ideasQuery = useMemoFirebase(() => {
+    if (!ideasCollection) return null;
+    return query(ideasCollection, orderBy('createdAt', 'desc'));
+  }, [ideasCollection]);
+
+  const { data: ideas = [], isLoading } = useCollection<Omit<ContentIdea, 'id'>>(ideasQuery);
+
+  const toggleFavorite = (id: string, isFavorite: boolean) => {
+    if (!user) return;
+    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
+    updateDocumentNonBlocking(ideaDoc, { isFavorite: !isFavorite });
   };
 
-  const toggleCompleted = (id: number) => {
-    setIdeas(ideas.map((idea) => (idea.id === id ? { ...idea, isCompleted: !idea.isCompleted } : idea)));
+  const toggleCompleted = (id: string, isCompleted: boolean) => {
+    if (!user) return;
+    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
+    updateDocumentNonBlocking(ideaDoc, { isCompleted: !isCompleted });
   };
 
-  const deleteIdea = (id: number) => {
-    setIdeas(ideas.filter((idea) => idea.id !== id));
+  const deleteIdea = (id: string) => {
+    if (!user) return;
+    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
+    deleteDocumentNonBlocking(ideaDoc);
   };
 
-  const addIdea = (newIdea: Omit<ContentIdea, 'id'>) => {
-    setIdeas([...ideas, { ...newIdea, id: Date.now() }]);
-    setAddDialogOpen(false);
+  const addIdea = (newIdea: Omit<ContentIdea, 'id' | 'createdAt'>) => {
+    if (ideasCollection) {
+      addDocumentNonBlocking(ideasCollection, { ...newIdea, createdAt: serverTimestamp() });
+      // Closing the dialog is handled by the component state
+    }
   };
   
   const filteredIdeas = ideas.filter(idea => {
@@ -114,15 +111,15 @@ export default function IdeasPage() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button disabled={!user}>
                     <Plus className="mr-2 h-4 w-4" /> Adicionar Ideia
                 </Button>
             </DialogTrigger>
-            <AddIdeaDialog onAddIdea={addIdea} />
+            <AddIdeaDialog onAddIdea={(idea) => { addIdea(idea); setAddDialogOpen(false); }} />
         </Dialog>
       </div>
 
-      <AIBrainstormCard addIdea={addIdea} />
+      <AIBrainstormCard addIdea={addIdea} disabled={!user} />
 
       <Card>
         <CardHeader>
@@ -142,7 +139,8 @@ export default function IdeasPage() {
             </TabsList>
           </Tabs>
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {filteredIdeas.length > 0 ? (
+            {isLoading && <p>A carregar ideias...</p>}
+            {!isLoading && filteredIdeas.length > 0 ? (
                 filteredIdeas.map((idea) => (
                     <IdeaCard 
                         key={idea.id} 
@@ -152,7 +150,7 @@ export default function IdeasPage() {
                         onDelete={deleteIdea}
                     />
                 ))
-            ) : (
+            ) : !isLoading && (
                 <div className="text-center py-12 text-muted-foreground col-span-full">
                     <p>Nenhuma ideia encontrada para esta categoria. Hora de ter ideias!</p>
                 </div>
@@ -166,9 +164,9 @@ export default function IdeasPage() {
 
 function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
     idea: ContentIdea,
-    onToggleFavorite: (id: number) => void,
-    onToggleCompleted: (id: number) => void,
-    onDelete: (id: number) => void,
+    onToggleFavorite: (id: string, isFavorite: boolean) => void,
+    onToggleCompleted: (id: string, isCompleted: boolean) => void,
+    onDelete: (id: string) => void,
 }) {
     return (
         <Card className={`flex flex-col transition-all ${idea.isCompleted ? 'bg-muted/30' : 'bg-card'}`}>
@@ -177,7 +175,7 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
                     <div>
                         <Badge variant="secondary">{idea.contentType}</Badge>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onToggleFavorite(idea.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onToggleFavorite(idea.id, idea.isFavorite)}>
                         <Star className={`h-5 w-5 ${idea.isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
                     </Button>
                 </CardTitle>
@@ -187,7 +185,7 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
             </CardHeader>
             <CardFooter className="flex justify-between items-center mt-auto pt-4 border-t">
                 <div className="flex items-center space-x-2">
-                    <Switch id={`completed-${idea.id}`} checked={idea.isCompleted} onCheckedChange={() => onToggleCompleted(idea.id)} />
+                    <Switch id={`completed-${idea.id}`} checked={idea.isCompleted} onCheckedChange={() => onToggleCompleted(idea.id, idea.isCompleted)} />
                     <Label htmlFor={`completed-${idea.id}`} className="text-sm">Feito</Label>
                 </div>
                 <div className='flex items-center gap-1'>
@@ -207,7 +205,7 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
     );
 }
 
-function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'>) => void }) {
+function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'| 'createdAt'>) => void }) {
     const [description, setDescription] = useState('');
     const [videoLink, setVideoLink] = useState('');
     const [contentType, setContentType] = useState<ContentType | ''>('');
@@ -264,7 +262,7 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
 }
 
 
-function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>) => void }) {
+function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentIdea, 'id' | 'createdAt'>) => void, disabled: boolean }) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [contentType, setContentType] = useState<ContentType>('Humor/Meme');
@@ -306,7 +304,7 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
             <CardContent className="flex flex-col sm:flex-row gap-4 items-center">
                 <div className="w-full sm:w-auto flex-grow space-y-2">
                     <Label htmlFor="ai-contentType">Gerar ideias para:</Label>
-                     <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)}>
+                     <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
                         <SelectTrigger id="ai-contentType">
                             <SelectValue placeholder="Selecione um tipo de conteúdo" />
                         </SelectTrigger>
@@ -318,7 +316,7 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
                     </Select>
                 </div>
                 <div className="w-full sm:w-auto self-end">
-                    <Button onClick={handleGenerateIdeas} disabled={isLoading} className="w-full sm:w-auto">
+                    <Button onClick={handleGenerateIdeas} disabled={disabled || isLoading} className="w-full sm:w-auto">
                         {isLoading ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (

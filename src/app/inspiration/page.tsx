@@ -5,12 +5,10 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Dialog,
@@ -24,55 +22,46 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Link as LinkIcon, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { UserPlus, Trash2 } from 'lucide-react';
 import placeholderImages from '@/lib/placeholder-images.json';
 import Image from 'next/image';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, query, orderBy, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const initialCreators: Creator[] = [
-  {
-    id: 1,
-    name: 'Ninja',
-    photoUrl: placeholderImages.creators[0].src,
-    category: 'Skill/Treino',
-    socialLink: 'https://twitch.tv/ninja',
-  },
-  {
-    id: 2,
-    name: 'PewDiePie',
-    photoUrl: placeholderImages.creators[1].src,
-    category: 'Humor/Meme',
-    socialLink: 'https://youtube.com/pewdiepie',
-  },
-  {
-    id: 3,
-    name: 'Pokimane',
-    photoUrl: placeholderImages.creators[2].src,
-    category: 'Mindset/Rotina',
-    socialLink: 'https://twitch.tv/pokimane',
-  },
-  {
-    id: 4,
-    name: 'MrBeast',
-    photoUrl: placeholderImages.creators[3].src,
-    category: 'YouTube',
-    socialLink: 'https://youtube.com/mrbeast',
-  },
-];
 
 const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'];
 
 export default function InspirationPage() {
-    const [creators, setCreators] = useState<Creator[]>(initialCreators);
     const [filter, setFilter] = useState<ContentType | 'All'>('All');
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
-    const addCreator = (newCreator: Omit<Creator, 'id'>) => {
-        setCreators([{...newCreator, id: Date.now()}, ...creators]);
-        setAddDialogOpen(false);
+    const firestore = useFirestore();
+    const { user } = useUser();
+
+    const creatorsCollection = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, `users/${user.uid}/creators`);
+    }, [firestore, user]);
+
+    const creatorsQuery = useMemoFirebase(() => {
+        if (!creatorsCollection) return null;
+        return query(creatorsCollection, orderBy('createdAt', 'desc'));
+    }, [creatorsCollection]);
+
+    const { data: creators = [], isLoading } = useCollection<Omit<Creator, 'id'>>(creatorsQuery);
+
+
+    const addCreator = (newCreator: Omit<Creator, 'id' | 'createdAt'>) => {
+        if(creatorsCollection) {
+            addDocumentNonBlocking(creatorsCollection, {...newCreator, createdAt: serverTimestamp()});
+            setAddDialogOpen(false);
+        }
     }
-    const deleteCreator = (id: number) => {
-        setCreators(creators.filter(c => c.id !== id));
+    const deleteCreator = (id: string) => {
+        if(!user) return;
+        const creatorDoc = doc(firestore, `users/${user.uid}/creators`, id);
+        deleteDocumentNonBlocking(creatorDoc);
     }
 
     const filteredCreators = creators.filter(creator => filter === 'All' || creator.category === filter);
@@ -86,7 +75,7 @@ export default function InspirationPage() {
                 </div>
                  <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button disabled={!user}>
                             <UserPlus className="mr-2 h-4 w-4" /> Adicionar Criador
                         </Button>
                     </DialogTrigger>
@@ -107,11 +96,12 @@ export default function InspirationPage() {
                 </CardHeader>
                 <CardContent>
                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {filteredCreators.length > 0 ? (
+                        {isLoading && <p>A carregar criadores...</p>}
+                        {!isLoading && filteredCreators.length > 0 ? (
                             filteredCreators.map((creator) => (
                                 <CreatorCard key={creator.id} creator={creator} onDelete={deleteCreator}/>
                             ))
-                        ) : (
+                        ) : !isLoading && (
                              <div className="text-center py-12 text-muted-foreground col-span-full">
                                 <p>Nenhum criador encontrado para esta categoria.</p>
                             </div>
@@ -123,7 +113,7 @@ export default function InspirationPage() {
     );
 }
 
-function CreatorCard({ creator, onDelete }: { creator: Creator, onDelete: (id: number) => void }) {
+function CreatorCard({ creator, onDelete }: { creator: Creator, onDelete: (id: string) => void }) {
     const hint = placeholderImages.creators.find(p => p.src === creator.photoUrl)?.hint || 'person portrait';
     return (
         <Card className="group relative">
@@ -146,8 +136,7 @@ function CreatorCard({ creator, onDelete }: { creator: Creator, onDelete: (id: n
     );
 }
 
-function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creator, 'id'>) => void }) {
-    const { toast } = useToast();
+function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creator, 'id' | 'createdAt'>) => void }) {
     const [name, setName] = useState('');
     const [photoUrl, setPhotoUrl] = useState('');
     const [socialLink, setSocialLink] = useState('');

@@ -1,29 +1,26 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const initialTasks: Task[] = [
-  { id: 1, text: 'Brainstorm de 5 novas ideias de vídeo para o TikTok', completed: false },
-  { id: 2, text: 'Gravar e editar o vídeo "Um Dia na Vida" para o YouTube', completed: false },
-  { id: 3, text: 'Agendar posts do Instagram para a próxima semana', completed: true },
-  { id: 4, text: 'Interagir com comentários por 30 minutos', completed: false },
-];
 
-function TaskItem({ task, onToggle, onDelete }: { task: Task, onToggle: (id: number) => void, onDelete: (id: number) => void}) {
+function TaskItem({ task, onToggle, onDelete }: { task: Task, onToggle: (id: string, completed: boolean) => void, onDelete: (id: string) => void}) {
   return (
     <div className="flex items-center space-x-4 p-2 rounded-md hover:bg-muted/50 transition-colors group">
       <Checkbox
         id={`task-${task.id}`}
         checked={task.completed}
-        onCheckedChange={() => onToggle(task.id)}
+        onCheckedChange={(checked) => onToggle(task.id, !!checked)}
         aria-label={`Marcar tarefa como ${task.completed ? 'incompleta' : 'completa'}`}
       />
       <label
@@ -46,22 +43,43 @@ function TaskItem({ task, onToggle, onDelete }: { task: Task, onToggle: (id: num
 }
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [newTask, setNewTask] = useState('');
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const tasksCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/tasks`);
+  }, [firestore, user]);
+
+  const tasksQuery = useMemoFirebase(() => {
+    if (!tasksCollection) return null;
+    return query(tasksCollection, orderBy('createdAt', 'desc'));
+  }, [tasksCollection]);
+
+  const { data: tasks = [], isLoading } = useCollection<Omit<Task, 'id'>>(tasksQuery);
 
   const handleAddTask = () => {
-    if (newTask.trim()) {
-      setTasks([...tasks, { id: Date.now(), text: newTask, completed: false }]);
+    if (newTask.trim() && tasksCollection) {
+      addDocumentNonBlocking(tasksCollection, { 
+        text: newTask, 
+        completed: false,
+        createdAt: serverTimestamp() 
+      });
       setNewTask('');
     }
   };
 
-  const handleToggleTask = (id: number) => {
-    setTasks(tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)));
+  const handleToggleTask = (id: string, completed: boolean) => {
+    if (!user) return;
+    const taskDoc = doc(firestore, `users/${user.uid}/tasks`, id);
+    updateDocumentNonBlocking(taskDoc, { completed });
   };
 
-  const handleDeleteTask = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+  const handleDeleteTask = (id: string) => {
+    if (!user) return;
+    const taskDoc = doc(firestore, `users/${user.uid}/tasks`, id);
+    deleteDocumentNonBlocking(taskDoc);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -86,18 +104,20 @@ export default function TasksPage() {
             onChange={(e) => setNewTask(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="ex: Editar novo vídeo do YouTube"
+            disabled={!user || isLoading}
           />
-          <Button onClick={handleAddTask}>
+          <Button onClick={handleAddTask} disabled={!user || isLoading || !newTask.trim()}>
             <Plus className="mr-2 h-4 w-4" /> Adicionar Tarefa
           </Button>
         </div>
         
         <div className="space-y-2">
-          {pendingTasks.length > 0 ? (
+          {isLoading && <p>A carregar tarefas...</p>}
+          {!isLoading && pendingTasks.length > 0 ? (
             pendingTasks.map((task) => (
               <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onDelete={handleDeleteTask} />
             ))
-          ) : (
+          ) : !isLoading && (
              <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                 <p>Nenhuma tarefa pendente. Bom trabalho!</p>
             </div>

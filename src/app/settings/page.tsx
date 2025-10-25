@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import 'react-image-crop/dist/ReactCrop.css';
 import {
   Avatar,
@@ -19,8 +19,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogOut } from 'lucide-react';
-import placeholderImages from '@/lib/placeholder-images.json';
+import { Loader2, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -31,12 +30,12 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
+import type { UserProfile } from '@/lib/types';
 
-const initialUser = {
-  name: 'Valter',
-  email: 'valter@email.com',
-  avatar: placeholderImages.creators[4].src,
-};
 
 function centerAspectCrop(
     mediaWidth: number,
@@ -74,12 +73,32 @@ export default function SettingsPage() {
 
 function ProfileSettings() {
   const { toast } = useToast();
-  const [user, setUser] = useState(initialUser);
+  const { user, firestore } = useFirebase();
+
+  const userProfileDoc = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
+  
+  const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState('');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>();
   const [isCropModalOpen, setCropModalOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (userProfile) {
+      setName(userProfile.name || user?.displayName || '');
+      setAvatar(userProfile.avatar || user?.photoURL || '');
+    }
+  }, [userProfile, user]);
+
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -99,16 +118,45 @@ function ProfileSettings() {
   }
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUser(prev => ({ ...prev, name: event.target.value }));
+    setName(event.target.value);
   }
 
-  const handleSaveChanges = () => {
-    // Here you would typically send the data to a server
-    console.log("Saving data:", user);
+  const handleSaveChanges = async () => {
+    if (!userProfileDoc) return;
+    setIsSaving(true);
+    let finalAvatarUrl = avatar;
+
+    // Only upload if a new avatar has been set via cropping
+    if (avatar.startsWith('data:image')) {
+        const storage = getStorage();
+        const avatarRef = storageRef(storage, `avatars/${user?.uid}/profile.jpg`);
+        try {
+            await uploadString(avatarRef, avatar, 'data_url');
+            finalAvatarUrl = await getDownloadURL(avatarRef);
+        } catch(e) {
+            console.error("Error uploading avatar: ", e);
+            toast({
+                variant: 'destructive',
+                title: "Erro no Upload",
+                description: "Não foi possível carregar a sua nova foto de perfil.",
+              });
+            setIsSaving(false);
+            return;
+        }
+    }
+
+    const updatedProfile = {
+      name: name,
+      avatar: finalAvatarUrl
+    };
+
+    updateDocumentNonBlocking(userProfileDoc, updatedProfile);
+    
     toast({
       title: "Perfil Atualizado",
       description: "As suas alterações foram guardadas com sucesso.",
     });
+    setIsSaving(false);
   }
 
   const handleCropComplete = () => {
@@ -116,10 +164,14 @@ function ProfileSettings() {
         const canvas = document.createElement('canvas');
         const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
         const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
-        canvas.width = crop.width;
-        canvas.height = crop.height;
+        const pixelRatio = window.devicePixelRatio;
+        canvas.width = crop.width * pixelRatio;
+        canvas.height = crop.height * pixelRatio;
         const ctx = canvas.getContext('2d');
         if (ctx) {
+            ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+            ctx.imageSmoothingQuality = 'high';
+
             ctx.drawImage(
                 imgRef.current,
                 crop.x * scaleX,
@@ -132,11 +184,15 @@ function ProfileSettings() {
                 crop.height
             );
             const base64Image = canvas.toDataURL('image/jpeg');
-            setUser(prev => ({ ...prev, avatar: base64Image }));
+            setAvatar(base64Image);
         }
     }
     setCropModalOpen(false);
   };
+
+  if (isProfileLoading) {
+    return <p>A carregar perfil...</p>;
+  }
 
   return (
     <div className="space-y-8">
@@ -148,8 +204,8 @@ function ProfileSettings() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={avatar} alt={name} />
+              <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
               <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
@@ -159,15 +215,18 @@ function ProfileSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
-            <Input id="name" value={user.name} onChange={handleNameChange} />
+            <Input id="name" value={name} onChange={handleNameChange} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={user.email} readOnly className="bg-muted/50 cursor-not-allowed" />
+            <Input id="email" type="email" value={user?.email || ''} readOnly className="bg-muted/50 cursor-not-allowed" />
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSaveChanges}>Guardar Alterações</Button>
+          <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            Guardar Alterações
+            </Button>
         </CardFooter>
       </Card>
 
