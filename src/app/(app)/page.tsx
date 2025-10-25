@@ -102,6 +102,44 @@ function InspirationalQuoteCard() {
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [isCropModalOpen, setCropModalOpen] = useState(false);
+    const [croppedImage, setCroppedImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!croppedImage || !userProfileDoc || !user) {
+          return;
+        }
+    
+        const uploadImage = async () => {
+          setIsSaving(true);
+          try {
+            const storage = getStorage();
+            const photoRef = storageRef(storage, `users/${user.uid}/motivational-photo.jpg`);
+            
+            await uploadString(photoRef, croppedImage, 'data_url');
+            const downloadURL = await getDownloadURL(photoRef);
+            
+            await updateDoc(userProfileDoc, { motivationalPhotoUrl: downloadURL });
+    
+            toast({
+              title: "Foto Atualizada!",
+              description: "A sua nova foto de motivação foi guardada.",
+            });
+            setCroppedImage(null); // Reset after upload
+          } catch (e) {
+            console.error("Error uploading motivational photo: ", e);
+            toast({
+              variant: 'destructive',
+              title: "Erro no Upload",
+              description: "Não foi possível carregar a sua nova foto de motivação.",
+            });
+          } finally {
+            setIsSaving(false);
+          }
+        };
+    
+        uploadImage();
+      }, [croppedImage, user, userProfileDoc, toast]);
+
 
     const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const { width, height } = e.currentTarget;
@@ -123,36 +161,21 @@ function InspirationalQuoteCard() {
     };
 
     const handleCropComplete = async () => {
-        if (!imgRef.current || !completedCrop?.width || !completedCrop?.height || !userProfileDoc || !user) return;
+        if (!imgRef.current || !completedCrop?.width || !completedCrop?.height) return;
         
-        setIsSaving(true);
-        setCropModalOpen(false);
-    
         try {
-            const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
-            const storage = getStorage();
-            const photoRef = storageRef(storage, `users/${user.uid}/motivational-photo.jpg`);
-            
-            await uploadString(photoRef, croppedImageBase64, 'data_url');
-            const downloadURL = await getDownloadURL(photoRef);
-            
-            await updateDoc(userProfileDoc, { motivationalPhotoUrl: downloadURL });
-
-            toast({
-                title: "Foto Atualizada!",
-                description: "A sua nova foto de motivação foi guardada.",
-            });
+          const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
+          setCroppedImage(croppedImageBase64);
         } catch (e) {
-            console.error("Error uploading motivational photo: ", e);
-            toast({
-                variant: 'destructive',
-                title: "Erro no Upload",
-                description: "Não foi possível carregar a sua nova foto de motivação.",
-            });
-        } finally {
-            setIsSaving(false);
+          console.error("Error cropping image:", e);
+          toast({
+            variant: 'destructive',
+            title: "Erro ao Cortar",
+            description: "Não foi possível processar a imagem.",
+          });
         }
-    }
+        setCropModalOpen(false);
+      }
 
     const motivationalPhoto = userProfile?.motivationalPhotoUrl || placeholderImages.inspirational_quote_fallback.src;
     const hint = userProfile?.motivationalPhotoUrl ? 'motivational' : placeholderImages.inspirational_quote_fallback.hint;
@@ -303,5 +326,7 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
 
     

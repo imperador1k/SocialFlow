@@ -118,7 +118,8 @@ function ProfileSettings() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
   
   const [name, setName] = useState('');
-  const [newAvatar, setNewAvatar] = useState(''); // This will hold the base64 data URI of the new cropped avatar
+  const [newAvatarCropped, setNewAvatarCropped] = useState<string | null>(null);
+  const [displayAvatar, setDisplayAvatar] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imgSrc, setImgSrc] = useState(''); // Source for the cropping modal
@@ -131,15 +132,60 @@ function ProfileSettings() {
   const originalName = userProfile?.name || user?.displayName || '';
   const originalAvatar = userProfile?.avatar || user?.photoURL || '';
   
-  const displayAvatar = newAvatar || originalAvatar;
-  
-  const hasChanges = name !== originalName || newAvatar !== '';
+  const hasChanges = name !== originalName || !!newAvatarCropped;
 
   useEffect(() => {
     if (userProfile) {
       setName(userProfile.name || user?.displayName || '');
+      setDisplayAvatar(userProfile.avatar || user?.photoURL || '');
     }
   }, [userProfile, user]);
+
+  useEffect(() => {
+    if (!newAvatarCropped || !user || !userProfileDoc) return;
+  
+    const saveChanges = async () => {
+      setIsSaving(true);
+      try {
+        const profileUpdates: Partial<UserProfile> = {};
+  
+        if (newAvatarCropped.startsWith('data:image')) {
+          const storage = getStorage();
+          const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
+          await uploadString(avatarRef, newAvatarCropped, 'data_url');
+          const finalAvatarUrl = await getDownloadURL(avatarRef);
+          profileUpdates.avatar = finalAvatarUrl;
+          setDisplayAvatar(finalAvatarUrl); 
+        }
+  
+        if (name !== originalName) {
+          profileUpdates.name = name;
+        }
+  
+        if (Object.keys(profileUpdates).length > 0) {
+          await updateDoc(userProfileDoc, profileUpdates);
+        }
+  
+        setNewAvatarCropped(null); // Reset cropped image state
+  
+        toast({
+          title: "Perfil Atualizado",
+          description: "As suas alterações foram guardadas com sucesso.",
+        });
+      } catch (e) {
+        console.error("Error saving profile: ", e);
+        toast({
+          variant: 'destructive',
+          title: "Erro ao Guardar",
+          description: "Não foi possível guardar as alterações no seu perfil.",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    };
+  
+    saveChanges();
+  }, [newAvatarCropped, name, originalName, user, userProfileDoc, toast]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,52 +211,42 @@ function ProfileSettings() {
     setName(event.target.value);
   }
 
-  const handleSaveChanges = async () => {
-    if (!userProfileDoc || !user) return;
-    setIsSaving(true);
-    
-    try {
-        const profileUpdates: Partial<UserProfile> = {};
-
-        if (newAvatar.startsWith('data:image')) {
-            const storage = getStorage();
-            const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-            await uploadString(avatarRef, newAvatar, 'data_url');
-            const finalAvatarUrl = await getDownloadURL(avatarRef);
-            profileUpdates.avatar = finalAvatarUrl;
-        }
-
-        if (name !== originalName) {
-            profileUpdates.name = name;
-        }
-
-        if (Object.keys(profileUpdates).length > 0) {
-            await updateDoc(userProfileDoc, profileUpdates);
-        }
-        
-        setNewAvatar('');
-
+  const handleTriggerSave = async () => {
+    // This function now only triggers the useEffect by setting the cropped image
+    // or by initiating a save if only the name changed.
+    if (!hasChanges) return;
+  
+    if (imgSrc && completedCrop) {
+      // If there's a crop to be done, do it. This will trigger the useEffect.
+      handleCropComplete();
+    } else if (name !== originalName) {
+      // If only the name changed, we can directly update.
+      setIsSaving(true);
+      try {
+        await updateDoc(userProfileDoc!, { name });
         toast({
-            title: "Perfil Atualizado",
-            description: "As suas alterações foram guardadas com sucesso.",
+          title: "Nome Atualizado",
+          description: "O seu nome foi guardado com sucesso.",
         });
-    } catch(e) {
-        console.error("Error saving profile: ", e);
+      } catch (e) {
+        console.error("Error saving name: ", e);
         toast({
-            variant: 'destructive',
-            title: "Erro ao Guardar",
-            description: "Não foi possível guardar as alterações no seu perfil.",
+          variant: 'destructive',
+          title: "Erro ao Guardar",
+          description: "Não foi possível guardar o seu nome.",
         });
-    } finally {
+      } finally {
         setIsSaving(false);
+      }
     }
-  }
+  };
 
   const handleCropComplete = async () => {
     if (imgRef.current && completedCrop?.width && completedCrop?.height) {
         try {
             const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
-            setNewAvatar(croppedImageBase64);
+            setNewAvatarCropped(croppedImageBase64); // This will trigger the useEffect
+            setDisplayAvatar(croppedImageBase64); // Show preview immediately
         } catch (e) {
             console.error("Error cropping image:", e);
             toast({
@@ -280,7 +316,7 @@ function ProfileSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSaveChanges} disabled={isSaving || !hasChanges}>
+          <Button onClick={handleTriggerSave} disabled={isSaving || !hasChanges}>
             {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Guardar Alterações
             </Button>
@@ -329,5 +365,7 @@ function ProfileSettings() {
     </div>
   )
 }
+
+    
 
     
