@@ -272,7 +272,7 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
     const handleGenerateIdeas = async () => {
         setIsLoading(true);
         try {
-            const result = await generateContentIdeas({ theme: 'jogos e streaming', contentType, numberOfIdeas: 3 });
+            const result = await generateContentIdeas({ contentType, numberOfIdeas: 3 });
             result.ideas.forEach(ideaDesc => {
                 addIdea({
                     description: ideaDesc,
@@ -301,11 +301,11 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
         <Card className="bg-gradient-to-br from-card to-secondary">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Lightbulb className="text-primary glow-icon" /> Assistente de Brainstorm IA</CardTitle>
-                <CardDescription>Está sem ideias? Deixe a IA gerar algumas para você.</CardDescription>
+                <CardDescription>Está sem ideias? Deixe a IA gerar algumas com base na sua estratégia de conteúdo.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-4 items-center">
                 <div className="w-full sm:w-auto flex-grow space-y-2">
-                    <Label htmlFor="ai-contentType">Selecione um Tipo de Conteúdo</Label>
+                    <Label htmlFor="ai-contentType">Gerar ideias para:</Label>
                      <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)}>
                         <SelectTrigger id="ai-contentType">
                             <SelectValue placeholder="Selecione um tipo de conteúdo" />
