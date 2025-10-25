@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -63,10 +64,10 @@ const platformIcons = {
 };
 
 const contentTypeColors: Record<ContentType, string> = {
-    "Humor/Meme": "bg-chart-1/20 text-chart-1",
-    "Skill/Treino": "bg-chart-2/20 text-chart-2",
-    "Mindset/Rotina": "bg-chart-3/20 text-chart-3",
-    "YouTube": "bg-destructive/20 text-destructive",
+    "Humor/Meme": "bg-chart-1/20 text-chart-1 border-chart-1/30",
+    "Skill/Treino": "bg-chart-2/20 text-chart-2 border-chart-2/30",
+    "Mindset/Rotina": "bg-chart-3/20 text-chart-3 border-chart-3/30",
+    "YouTube": "bg-destructive/20 text-destructive border-destructive/30",
 };
 
 export default function CalendarPage() {
@@ -89,56 +90,85 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle>Content Calendar</CardTitle>
-          <CardDescription>Plan and visualize your content schedule.</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+      <Card className="xl:col-span-2">
+        <CardContent className="p-1">
           <Calendar
             mode="single"
             selected={date}
             onSelect={setDate}
-            className="rounded-md border p-0"
+            className="p-0"
+            classNames={{
+                root: 'w-full',
+                months: 'w-full',
+                month: 'w-full',
+                table: 'w-full',
+                head_row: 'grid grid-cols-7',
+                row: 'grid grid-cols-7',
+                cell: 'text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                day: 'h-14 w-full p-1 font-normal aria-selected:opacity-100',
+                day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-md',
+                day_today: 'bg-accent text-accent-foreground rounded-md',
+                day_outside: 'text-muted-foreground opacity-50',
+                day_disabled: 'text-muted-foreground opacity-50',
+                day_range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                day_hidden: 'invisible',
+                ...{
+                    caption: "flex justify-center pt-1 relative items-center",
+                    caption_label: "text-sm font-medium",
+                    nav: "space-x-1 flex items-center",
+                    nav_button: 'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                }
+            }}
             modifiers={{ scheduled: eventDates }}
             modifiersClassNames={{
-                scheduled: 'relative before:absolute before:bottom-1 before:left-1/2 before:-translate-x-1/2 before:w-1.5 before:h-1.5 before:bg-primary before:rounded-full',
-                selected: 'bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground'
+                scheduled: 'relative before:absolute before:bottom-2 before:left-1/2 before:-translate-x-1/2 before:w-1.5 before:h-1.5 before:bg-primary before:rounded-full',
+            }}
+            components={{
+                DayContent: ({ date, ...props }) => (
+                    <div className="flex flex-col items-center justify-center h-full">
+                        <span>{format(date, 'd')}</span>
+                    </div>
+                ),
             }}
           />
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Schedule for <span className="text-primary">{date ? format(date, 'MMMM do') : '...'}</span>
-          </CardTitle>
-          <CardDescription>
-            {selectedDayEvents.length} post{selectedDayEvents.length !== 1 ? 's' : ''} scheduled.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-            {selectedDayEvents.length > 0 ? (
-              selectedDayEvents.map((event) => (
-                <div key={event.id} className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                   <div className="p-2 bg-muted rounded-full text-muted-foreground">{platformIcons[event.platform]}</div>
-                   <div className="flex-grow">
-                        <p className="font-medium text-sm">{event.title}</p>
-                        <Badge variant="outline" className={`text-xs ${contentTypeColors[event.contentType]}`}>
-                            {event.contentType}
-                        </Badge>
-                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">No posts scheduled for this day.</p>
+      <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Schedule for <span className="text-primary">{date ? format(date, 'MMMM do') : '...'}</span>
+              </CardTitle>
+              <CardDescription>
+                {selectedDayEvents.length} post{selectedDayEvents.length !== 1 ? 's' : ''} scheduled.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {selectedDayEvents.length > 0 ? (
+                  selectedDayEvents.map((event) => (
+                    <div key={event.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                       <div className="p-2 bg-muted rounded-full text-muted-foreground mt-1">{platformIcons[event.platform]}</div>
+                       <div className="flex-grow">
+                            <p className="font-medium text-sm leading-tight">{event.title}</p>
+                            <Badge variant="outline" className={`mt-1 text-xs ${contentTypeColors[event.contentType]}`}>
+                                {event.contentType}
+                            </Badge>
+                       </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">No posts scheduled for this day.</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full" disabled={!date}>
@@ -147,8 +177,7 @@ export default function CalendarPage() {
             </DialogTrigger>
             <AddEventDialog onAddEvent={handleAddEvent} />
           </Dialog>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -177,32 +206,34 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
           <Label htmlFor="title">Post Title</Label>
           <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. New video about..." />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="platform">Platform</Label>
-          <Select onValueChange={(v) => setPlatform(v as any)}>
-            <SelectTrigger id="platform">
-              <SelectValue placeholder="Select a platform" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Instagram">Instagram</SelectItem>
-              <SelectItem value="TikTok">TikTok</SelectItem>
-              <SelectItem value="YouTube">YouTube</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="contentType">Content Type</Label>
-          <Select onValueChange={(v) => setContentType(v as any)}>
-            <SelectTrigger id="contentType">
-              <SelectValue placeholder="Select content type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Humor/Meme">Humor/Meme</SelectItem>
-              <SelectItem value="Skill/Treino">Skill/Treino</SelectItem>
-              <SelectItem value="Mindset/Rotina">Mindset/Rotina</SelectItem>
-              <SelectItem value="YouTube">YouTube</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="platform">Platform</Label>
+            <Select onValueChange={(v) => setPlatform(v as any)}>
+              <SelectTrigger id="platform">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Instagram">Instagram</SelectItem>
+                <SelectItem value="TikTok">TikTok</SelectItem>
+                <SelectItem value="YouTube">YouTube</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contentType">Content Type</Label>
+            <Select onValueChange={(v) => setContentType(v as any)}>
+              <SelectTrigger id="contentType">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Humor/Meme">Humor/Meme</SelectItem>
+                <SelectItem value="Skill/Treino">Skill/Treino</SelectItem>
+                <SelectItem value="Mindset/Rotina">Mindset/Rotina</SelectItem>
+                <SelectItem value="YouTube">YouTube</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       <DialogFooter>
@@ -216,3 +247,6 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
     </DialogContent>
   );
 }
+
+
+    
