@@ -27,7 +27,7 @@ const GenerateContentIdeasInputSchema = z.object({
 export type GenerateContentIdeasInput = z.infer<typeof GenerateContentIdeasInputSchema>;
 
 const GenerateContentIdeasOutputSchema = z.object({
-  ideas: z.array(z.string()).describe('A list of content ideas.'),
+  ideas: z.array(z.string()).describe('An array of content ideas. Each element in the array is a separate idea.'),
 });
 
 export type GenerateContentIdeasOutput = z.infer<typeof GenerateContentIdeasOutputSchema>;
@@ -78,7 +78,7 @@ The ideas must be deeply integrated with Valter's identity and strategy. Be bold
 - If the type is 'Mindset/Rotina', the idea should be inspirational and show discipline or behind-the-scenes reality.
 - If the type is 'YouTube', suggest a long-form video idea based on his pillars (Journey, Free Education, Personal Development).
 
-Return the ideas as a numbered list. Be direct and actionable.
+Return ONLY a JSON object with an "ideas" property, which is an array of strings. Each string in the array should be a single, distinct idea. Do not add any other text or formatting.
 `,
 });
 
