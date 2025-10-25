@@ -7,17 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Bell, Palette, Lock, LogOut } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { LogOut } from 'lucide-react';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { useToast } from '@/hooks/use-toast';
-
-const settingsNav = [
-  { name: 'Perfil', icon: User },
-  { name: 'Notificações', icon: Bell },
-  { name: 'Aparência', icon: Palette },
-  { name: 'Segurança', icon: Lock },
-];
 
 const initialUser = {
   name: 'Valter',
@@ -26,35 +18,14 @@ const initialUser = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('Perfil');
-
   return (
     <div className="space-y-6">
        <div>
         <h1 className="text-2xl font-bold tracking-tight">Definições</h1>
         <p className="text-muted-foreground">Gerencie as definições e preferências da sua conta.</p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-        <nav className="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:col-span-1 pb-2 lg:pb-0">
-          {settingsNav.map((item) => (
-            <Button
-              key={item.name}
-              variant="ghost"
-              onClick={() => setActiveTab(item.name)}
-              className={cn(
-                'justify-start w-full whitespace-nowrap',
-                activeTab === item.name && 'bg-muted text-foreground font-semibold'
-              )}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.name}
-            </Button>
-          ))}
-        </nav>
-        <div className="lg:col-span-4">
-          {activeTab === 'Perfil' && <ProfileSettings />}
-          {activeTab !== 'Perfil' && <PlaceholderSection title={activeTab} />}
-        </div>
+      <div className="grid grid-cols-1 gap-8 items-start">
+        <ProfileSettings />
       </div>
     </div>
   );
@@ -137,21 +108,3 @@ function ProfileSettings() {
         </div>
     )
 }
-
-function PlaceholderSection({ title }: { title: string }) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>As definições para {title.toLowerCase()} estarão disponíveis aqui em breve.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <div className="flex h-[200px] w-full items-center justify-center rounded-md border-2 border-dashed">
-                <p className="text-muted-foreground">Em Breve</p>
-            </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-    
