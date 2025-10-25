@@ -1,0 +1,87 @@
+
+[
+  {
+    "id": 1,
+    "mode": "external",
+    "label": "Non-web links",
+    "pagesToTrigger": "custom",
+    "regex": "^(?!https?://).*"
+  },
+  {
+    "id": 2,
+    "mode": "external",
+    "label": "Facebook",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([-\\w]+\\.)*facebook\\.com.*"
+  },
+  {
+    "id": 3,
+    "mode": "external",
+    "label": "Twitter/X",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([\\-\\w]+\\.)*(twitter|x)\\.com/.*"
+  },
+  {
+    "id": 4,
+    "mode": "external",
+    "label": "Instagram",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([-\\w]+\\.)*instagram\\.com/.*"
+  },
+  {
+    "id": 11,
+    "mode": "external",
+    "label": "TikTok",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([-\\w]+\\.)*tiktok\\.com/.*"
+  },
+  {
+    "id": 12,
+    "mode": "external",
+    "label": "YouTube",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([-\\w]+\\.)*(youtube\\.com|youtu\\.be)/.*"
+  },
+  {
+    "id": 5,
+    "mode": "appbrowser",
+    "label": "Google Maps",
+    "pagesToTrigger": "custom",
+    "regex": "https?://maps\\.google\\.com.*"
+  },
+  {
+    "id": 6,
+    "mode": "appbrowser",
+    "label": "Google Maps Search",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([-\\w]+\\.)*google\\.com/maps/search/.*"
+  },
+  {
+    "id": 7,
+    "mode": "external",
+    "label": "LinkedIn",
+    "pagesToTrigger": "custom",
+    "regex": "https?://([-\\w]+\\.)*linkedin\\.com/.*"
+  },
+  {
+    "id": 8,
+    "mode": "internal",
+    "label": "Microsoft Login",
+    "pagesToTrigger": "custom",
+    "regex": "https?://login\\.microsoftonline\\.com.*"
+  },
+  {
+    "id": 9,
+    "mode": "internal",
+    "label": "All pages on my domain",
+    "pagesToTrigger": "domain",
+    "regex": "https?:\\/\\/([-\\w]+\\.)*vercel.app(\\/.*)?$"
+  },
+  {
+    "id": 10,
+    "mode": "appbrowser",
+    "label": "All Other Links",
+    "pagesToTrigger": "all",
+    "regex": ".*"
+  }
+]
