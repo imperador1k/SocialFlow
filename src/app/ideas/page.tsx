@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -96,7 +97,7 @@ export default function IdeasPage() {
     }
   };
   
-  const filteredIdeas = ideas.filter(idea => {
+  const filteredIdeas = (ideas || []).filter(idea => {
     if (filter === 'All') return true;
     if (filter === 'Favorites') return idea.isFavorite;
     return idea.contentType === filter;
@@ -329,3 +330,5 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
         </Card>
     );
 }
+
+    
