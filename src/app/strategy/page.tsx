@@ -49,21 +49,21 @@ const publishingSchedule = [
 ];
 
 const initialCtaExamples = [
-  'Like if you agree!',
-  'Comment your thoughts below.',
-  'Share this with someone who needs to see it.',
-  'Save this for later!',
-  'Follow for more content like this.',
-  "What's your favorite tip? Let me know!",
+  'Dá like se concordas!',
+  'Comenta a tua opinião abaixo.',
+  'Partilha isto com alguém que precisa de o ver.',
+  'Guarda isto para mais tarde!',
+  'Segue para mais conteúdo como este.',
+  'Qual é a tua dica favorita? Diz-me nos comentários!',
 ];
 
 const initialHookExamples = [
-  "You're doing [activity] all wrong.",
-  'The biggest mistake I made in [area].',
-  '3 things I wish I knew before [age/event].',
-  'Unpopular opinion: [controversial statement].',
-  'POV: You finally achieve [goal].',
-  'This one hack will change your [task].',
+  'Estás a fazer [atividade] da forma errada.',
+  'O maior erro que cometi em [área].',
+  '3 coisas que eu gostava de saber antes de [idade/evento].',
+  'Opinião impopular: [afirmação controversa].',
+  'POV: Finalmente alcanças [objetivo].',
+  'Este truque vai mudar a tua [tarefa].',
 ];
 
 function AIEngagementBoosterCard({
