@@ -103,10 +103,8 @@ function InspirationalQuoteCard() {
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [isCropModalOpen, setCropModalOpen] = useState(false);
     
-    // New state to trigger the upload effect
     const [croppedImage, setCroppedImage] = useState<string | null>(null);
 
-    // useEffect to handle the entire upload and update flow
     useEffect(() => {
         if (!croppedImage || !userProfileDoc || !user) {
           return;
@@ -136,7 +134,7 @@ function InspirationalQuoteCard() {
             });
           } finally {
             setIsSaving(false);
-            setCroppedImage(null); // Reset the trigger
+            setCroppedImage(null); 
           }
         };
     
@@ -151,14 +149,13 @@ function InspirationalQuoteCard() {
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
-          setCrop(undefined) // Makes crop preview update between images.
+          setCrop(undefined) 
           const reader = new FileReader()
           reader.addEventListener('load', () =>
             setImgSrc(reader.result?.toString() || '')
           )
           reader.readAsDataURL(event.target.files[0])
           setCropModalOpen(true);
-          // Clear the input value to allow re-selecting the same file
           event.target.value = '';
         }
     };
@@ -168,7 +165,6 @@ function InspirationalQuoteCard() {
         
         try {
           const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
-          // This state update will trigger the useEffect
           setCroppedImage(croppedImageBase64);
         } catch (e) {
           console.error("Error cropping image:", e);
@@ -256,24 +252,16 @@ export default function DashboardPage() {
 
     const metricsCollectionRef = useMemoFirebase(() => {
         if (!user) return null;
-        // Correctly reference the subcollection
         return collection(firestore, `users/${user.uid}/performanceMetrics`);
     }, [user, firestore]);
     
-    // Create a query from the collection reference
     const latestMetricsQuery = useMemoFirebase(() => {
         if (!metricsCollectionRef) return null;
         return query(metricsCollectionRef, orderBy('date', 'desc'), limit(1));
     }, [metricsCollectionRef]);
 
-    // useDoc expects a DocumentReference or null, not a Query.
-    // So we can't directly use latestMetricsQuery. We need to fetch the docs and then use the first one.
-    // A better approach would be a specific hook for queries that return one doc, but for now we adapt.
-    // Let's use a temporary state to hold the single document reference.
-    
     const [latestMetricRef, setLatestMetricRef] = useState<DocumentReference<DocumentData> | null>(null);
 
-    // This effect will run the query and set the reference to the latest document.
     useEffect(() => {
         if(latestMetricsQuery){
             const getDocRef = async () => {
@@ -330,5 +318,7 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
 
     

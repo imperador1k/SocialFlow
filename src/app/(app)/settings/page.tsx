@@ -121,19 +121,18 @@ function ProfileSettings() {
   const [displayAvatar, setDisplayAvatar] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imgSrc, setImgSrc] = useState(''); // Source for the cropping modal
+  const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isCropModalOpen, setCropModalOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // New state to trigger the upload effect
   const [newAvatarCropped, setNewAvatarCropped] = useState<string | null>(null);
   
   const originalName = userProfile?.name || user?.displayName || '';
   
-  const hasNameChanged = name !== originalName && name !== '';
+  const hasNameChanged = name !== '' && name !== originalName;
 
   useEffect(() => {
     if (userProfile) {
@@ -142,8 +141,6 @@ function ProfileSettings() {
     }
   }, [userProfile, user]);
 
-
-  // useEffect to handle the entire upload and update flow
   useEffect(() => {
     if (!newAvatarCropped || !user || !userProfileDoc) return;
 
@@ -158,7 +155,7 @@ function ProfileSettings() {
 
             await updateDoc(userProfileDoc, { avatar: finalAvatarUrl });
             
-            setDisplayAvatar(finalAvatarUrl); // Update UI with the final URL from storage
+            setDisplayAvatar(finalAvatarUrl); 
             toast({
                 title: "Avatar Atualizado",
                 description: "A sua nova foto de perfil foi guardada.",
@@ -170,11 +167,10 @@ function ProfileSettings() {
                 title: "Erro ao Guardar Avatar",
                 description: "Não foi possível guardar a sua nova foto.",
             });
-            // Revert optimistic UI update on error
             setDisplayAvatar(userProfile?.avatar || user?.photoURL || '');
         } finally {
             setIsSaving(false);
-            setNewAvatarCropped(null); // Reset the trigger
+            setNewAvatarCropped(null); 
         }
     };
     
@@ -185,7 +181,7 @@ function ProfileSettings() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setCrop(undefined); // Reset crop state
+      setCrop(undefined); 
       const reader = new FileReader();
       reader.onloadend = () => {
         setImgSrc(reader.result as string);
@@ -205,8 +201,9 @@ function ProfileSettings() {
     setName(event.target.value);
   }
 
-  const handleTriggerNameSave = async () => {
-    if (!user || !userProfileDoc || !hasNameChanged) return;
+  const handleSaveChanges = async () => {
+    if (!user || !userProfileDoc) return;
+    if(!hasNameChanged) return;
 
     setIsSaving(true);
     try {
@@ -231,9 +228,7 @@ function ProfileSettings() {
     if (imgRef.current && completedCrop?.width && completedCrop?.height) {
         try {
             const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
-            // Set the state that triggers the useEffect for upload
             setNewAvatarCropped(croppedImageBase64); 
-            // Optimistically update the UI to show the cropped image immediately
             setDisplayAvatar(croppedImageBase64); 
         } catch (e) {
             console.error("Error cropping image:", e);
@@ -304,7 +299,7 @@ function ProfileSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleTriggerNameSave} disabled={isSaving || !hasNameChanged}>
+          <Button onClick={handleSaveChanges} disabled={isSaving || !hasNameChanged}>
             {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Guardar Alterações
             </Button>
@@ -346,10 +341,12 @@ function ProfileSettings() {
             <DialogClose asChild>
                 <Button variant="outline" disabled={isSaving}>Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleCropComplete} disabled={!completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
+            <Button onClick={handleCropComplete} disabled={isSaving || !completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+
+    
