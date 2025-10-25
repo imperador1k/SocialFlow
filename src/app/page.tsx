@@ -19,7 +19,7 @@ function InspirationalQuoteCard() {
     };
 
     return (
-        <Card className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg">
+        <Card className="col-span-full relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg">
             <div className="relative w-full md:w-1/2 h-64 md:h-auto min-h-[300px]">
                 <Image
                     src={quoteData.imageUrl}
@@ -42,32 +42,38 @@ function InspirationalQuoteCard() {
 
 export default function DashboardPage() {
     return (
-        <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <InspirationalQuoteCard />
+        <div className="space-y-6">
+            <header>
+                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                <p className="text-muted-foreground">Welcome back! Here's a snapshot of your social media presence.</p>
+            </header>
+            <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+                <InspirationalQuoteCard />
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">45,231</div>
-                    <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-                </CardContent>
-            </Card>
+                <Card className="xl:col-span-2">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">45,231</div>
+                        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                    </CardContent>
+                </Card>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">5.2%</div>
-                    <p className="text-xs text-muted-foreground">+0.5% from last month</p>
-                </CardContent>
-            </Card>
-            
-            <DashboardCharts />
+                <Card className="xl:col-span-2">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">5.2%</div>
+                        <p className="text-xs text-muted-foreground">+0.5% from last month</p>
+                    </CardContent>
+                </Card>
+                
+                <DashboardCharts />
+            </div>
         </div>
     );
 }

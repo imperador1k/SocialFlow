@@ -9,40 +9,56 @@ import {
   Lightbulb,
   Menu,
   Sparkles,
+  MoreHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
-const navItems = [
+const mainNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/performance', label: 'Performance', icon: BarChart2 },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/ideas', label: 'Content Ideas', icon: Lightbulb },
+];
+
+const moreNavItems = [
   { href: '/inspiration', label: 'Inspiration', icon: Sparkles },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/strategy', label: 'Strategy', icon: FileText },
 ];
 
+const allNavItems = [...mainNavItems, ...moreNavItems];
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  const sidebarNav = (
-    <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
-      {navItems.map(({ href, label, icon: Icon }) => (
+  const mobileNav = (
+    <nav className="grid gap-2 text-lg font-medium">
+      <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
+        <Sparkles className="h-6 w-6 text-primary glow-icon" />
+        <span className="font-bold">SocialFlow</span>
+      </Link>
+      {allNavItems.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-all hover:text-primary',
-            pathname === href && 'bg-muted text-primary font-semibold'
+            'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
+            pathname === href && 'bg-muted text-foreground'
           )}
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-5 w-5" />
           {label}
         </Link>
       ))}
@@ -50,63 +66,66 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Sparkles className="h-6 w-6 text-primary glow-icon" />
-              <span className="">SocialFlow</span>
+    <div className="flex min-h-screen w-full flex-col">
+      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
+        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+          <Link href="/" className="flex items-center gap-2 lg:mr-4 font-semibold">
+            <Sparkles className="h-6 w-6 text-primary glow-icon" />
+            <span className="text-lg">SocialFlow</span>
+          </Link>
+          {mainNavItems.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'transition-colors text-muted-foreground hover:text-foreground',
+                pathname === href && 'text-foreground font-medium'
+              )}
+            >
+              {label}
             </Link>
-          </div>
-          <div className="flex-1 py-4">
-            {sidebarNav}
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+          ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  'flex items-center gap-1 text-muted-foreground hover:text-foreground',
+                  moreNavItems.some((item) => item.href === pathname) &&
+                    'text-foreground font-medium'
+                )}
+              >
+                More
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 text-lg font-semibold mb-4"
-                >
-                  <Sparkles className="h-6 w-6 text-primary glow-icon" />
-                  <span>SocialFlow</span>
-                </Link>
-                {navItems.map(({ href, label, icon: Icon }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                       pathname === href && 'bg-muted text-foreground'
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-           <div className="flex-1">
-             <h1 className="font-semibold text-lg">{navItems.find(item => item.href === pathname)?.label}</h1>
-           </div>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-          {children}
-        </main>
-      </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {moreNavItems.map(({ href, label }) => (
+                <DropdownMenuItem key={href} asChild>
+                  <Link href={href}>{label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </nav>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            {mobileNav}
+          </SheetContent>
+        </Sheet>
+        <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+          {/* Header content like search or user menu can go here */}
+        </div>
+      </header>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10">
+        {children}
+      </main>
     </div>
   );
 }
