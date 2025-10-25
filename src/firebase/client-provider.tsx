@@ -8,11 +8,12 @@ interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
-export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+// Este componente interno garante que os hooks só são chamados no cliente.
+function FirebaseInitializer({ children }: { children: ReactNode }) {
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
+    // Inicializa o Firebase no lado do cliente, uma vez por montagem do componente.
     return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); // O array de dependências vazio garante que isto só corre uma vez.
 
   return (
     <FirebaseProvider
@@ -23,4 +24,8 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       {children}
     </FirebaseProvider>
   );
+}
+
+export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  return <FirebaseInitializer>{children}</FirebaseInitializer>;
 }
