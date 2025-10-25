@@ -1,162 +1,155 @@
 /**
- * @description This ruleset enforces a strict user-ownership model, where each user can only access their own data.
- * @dataStructure All user data is nested under /users/{userId}, with subcollections for contentIdeas, creators, calendarEvents, performanceMetrics, and tasks.
- * @keySecurityDecisions
- *   - Users can only list content inside their own /users/{userId} node.
- *   - User profile documents (/users/{userId}) require that the document ID matches the authenticated user's UID upon creation.
- *   - Listing of user documents (/users) is disallowed.
- * @denormalizationForAuthorization N/A - Relies on path-based authorization and ID matching.
- * @structuralSegregation N/A - All user data is private and namespaced under their respective user ID.
+ * @fileoverview Firestore Security Rules for SocialFlow application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for all data. Each user can only
+ * access their own profile and the data nested under their user ID.  No listing of users is allowed.
+ *
+ * Data Structure:
+ * All data is nested under /users/{userId}, which includes profile information, content ideas, creators,
+ * calendar events, performance metrics, and tasks.
+ *
+ * Key Security Decisions:
+ * - User listing is explicitly denied to protect user privacy.
+ * - All data is private and user-specific. There are no public collections.
+ *
+ * Denormalization for Authorization:
+ *  - The document ID for the /users/{userId} document MUST match the Firebase Auth UID.
+ *  - Subcollection documents under /users/{userId} are implicitly owned by the user.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
-     */
-    function isSignedIn() {
-        return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user's UID matches the provided userId.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user is the owner and the resource exists.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Controls access to user profile documents.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) User with matching UID can create their profile, enforcing that the document id matches their auth UID.
-     * @deny (create) User attempts to create a profile with a mismatched UID.
-     * @allow (get) User with matching UID can read their profile.
-     * @deny (get) User attempts to read a different user's profile.
-     * @allow (update) User with matching UID can update their profile, only if the id doesn't change.
-     * @deny (update) User attempts to update a different user's profile.
-     * @allow (delete) User with matching UID can delete their profile.
-     * @deny (delete) User attempts to delete a different user's profile.
-     * @principle Enforces document ownership for all operations, and relational integrity on create and update.
+     * @description Controls access to user profile information.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user_abc' can create their profile if userId == user_abc.
+     * @allow (get) User with UID 'user_abc' can read their profile if userId == user_abc.
+     * @allow (update) User with UID 'user_abc' can update their profile if userId == user_abc.
+     * @allow (delete) User with UID 'user_abc' can delete their profile if userId == user_abc.
+     * @deny (create) User with UID 'user_xyz' cannot create profile for userId == user_abc.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow list: if false; // User listing is not permitted.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Controls access to content ideas for a specific user.
-     * @path /databases/{database}/documents/users/{userId}/contentIdeas/{contentIdeaId}
-     * @allow (create) User with matching UID can create a content idea.
-     * @deny (create) User attempts to create a content idea under a different user's ID.
-     * @allow (get) User with matching UID can read their own content idea.
-     * @deny (get) User attempts to read a content idea from a different user.
-     * @allow (update) User with matching UID can update their own content idea.
-     * @deny (update) User attempts to update a content idea from a different user.
-     * @allow (delete) User with matching UID can delete their own content idea.
-     * @deny (delete) User attempts to delete a content idea from a different user.
-     * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
+     * @description Controls access to a user's content ideas.
+     * @path /users/{userId}/contentIdeas/{contentIdeaId}
+     * @allow (create) User with UID 'user_abc' can create a content idea under their profile.
+     * @allow (get) User with UID 'user_abc' can read a content idea under their profile.
+     * @allow (list) User with UID 'user_abc' can list content ideas under their profile.
+     * @allow (update) User with UID 'user_abc' can update a content idea under their profile.
+     * @allow (delete) User with UID 'user_abc' can delete a content idea under their profile.
+     * @deny (create) User with UID 'user_xyz' cannot create a content idea under user_abc's profile.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId}/contentIdeas/{contentIdeaId} {
-      allow create: if isOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Controls access to creators for a specific user.
-     * @path /databases/{database}/documents/users/{userId}/creators/{creatorId}
-     * @allow (create) User with matching UID can create a creator entry.
-     * @deny (create) User attempts to create a creator entry under a different user's ID.
-     * @allow (get) User with matching UID can read their own creator entry.
-     * @deny (get) User attempts to read a creator entry from a different user.
-     * @allow (update) User with matching UID can update their own creator entry.
-     * @deny (update) User attempts to update a creator entry from a different user.
-     * @allow (delete) User with matching UID can delete their own creator entry.
-     * @deny (delete) User attempts to delete a creator entry from a different user.
-     * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
+     * @description Controls access to a user's list of inspirational creators.
+     * @path /users/{userId}/creators/{creatorId}
+     * @allow (create) User with UID 'user_abc' can create a creator under their profile.
+     * @allow (get) User with UID 'user_abc' can read a creator under their profile.
+     * @allow (list) User with UID 'user_abc' can list creators under their profile.
+     * @allow (update) User with UID 'user_abc' can update a creator under their profile.
+     * @allow (delete) User with UID 'user_abc' can delete a creator under their profile.
+     * @deny (create) User with UID 'user_xyz' cannot create a creator under user_abc's profile.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId}/creators/{creatorId} {
-      allow create: if isOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Controls access to calendar events for a specific user.
-     * @path /databases/{database}/documents/users/{userId}/calendarEvents/{eventId}
-     * @allow (create) User with matching UID can create a calendar event.
-     * @deny (create) User attempts to create a calendar event under a different user's ID.
-     * @allow (get) User with matching UID can read their own calendar event.
-     * @deny (get) User attempts to read a calendar event from a different user.
-     * @allow (update) User with matching UID can update their own calendar event.
-     * @deny (update) User attempts to update a calendar event from a different user.
-     * @allow (delete) User with matching UID can delete their own calendar event.
-     * @deny (delete) User attempts to delete a calendar event from a different user.
-     * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
+     * @description Controls access to a user's scheduled calendar events.
+     * @path /users/{userId}/calendarEvents/{eventId}
+     * @allow (create) User with UID 'user_abc' can create a calendar event under their profile.
+     * @allow (get) User with UID 'user_abc' can read a calendar event under their profile.
+     * @allow (list) User with UID 'user_abc' can list calendar events under their profile.
+     * @allow (update) User with UID 'user_abc' can update a calendar event under their profile.
+     * @allow (delete) User with UID 'user_abc' can delete a calendar event under their profile.
+     * @deny (create) User with UID 'user_xyz' cannot create a calendar event under user_abc's profile.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId}/calendarEvents/{eventId} {
-      allow create: if isOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Controls access to performance metrics for a specific user.
-     * @path /databases/{database}/documents/users/{userId}/performanceMetrics/{metricId}
-     * @allow (create) User with matching UID can create a performance metric entry.
-     * @deny (create) User attempts to create a performance metric entry under a different user's ID.
-     * @allow (get) User with matching UID can read their own performance metric entry.
-     * @deny (get) User attempts to read a performance metric entry from a different user.
-     * @allow (update) User with matching UID can update their own performance metric entry.
-     * @deny (update) User attempts to update a performance metric entry from a different user.
-     * @allow (delete) User with matching UID can delete their own performance metric entry.
-     * @deny (delete) User attempts to delete a performance metric entry from a different user.
-     * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
+     * @description Controls access to a user's historical performance metrics.
+     * @path /users/{userId}/performanceMetrics/{metricId}
+     * @allow (create) User with UID 'user_abc' can create a performance metric under their profile.
+     * @allow (get) User with UID 'user_abc' can read a performance metric under their profile.
+     * @allow (list) User with UID 'user_abc' can list performance metrics under their profile.
+     * @allow (update) User with UID 'user_abc' can update a performance metric under their profile.
+     * @allow (delete) User with UID 'user_abc' can delete a performance metric under their profile.
+     * @deny (create) User with UID 'user_xyz' cannot create a performance metric under user_abc's profile.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId}/performanceMetrics/{metricId} {
-      allow create: if isOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Controls access to tasks for a specific user.
-     * @path /databases/{database}/documents/users/{userId}/tasks/{taskId}
-     * @allow (create) User with matching UID can create a task.
-     * @deny (create) User attempts to create a task under a different user's ID.
-     * @allow (get) User with matching UID can read their own task.
-     * @deny (get) User attempts to read a task from a different user.
-     * @allow (update) User with matching UID can update their own task.
-     * @deny (update) User attempts to update a task from a different user.
-     * @allow (delete) User with matching UID can delete their own task.
-     * @deny (delete) User attempts to delete a task from a different user.
-     * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
+     * @description Controls access to a user's tasks.
+     * @path /users/{userId}/tasks/{taskId}
+     * @allow (create) User with UID 'user_abc' can create a task under their profile.
+     * @allow (get) User with UID 'user_abc' can read a task under their profile.
+     * @allow (list) User with UID 'user_abc' can list tasks under their profile.
+     * @allow (update) User with UID 'user_abc' can update a task under their profile.
+     * @allow (delete) User with UID 'user_abc' can delete a task under their profile.
+     * @deny (create) User with UID 'user_xyz' cannot create a task under user_abc's profile.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId}/tasks/{taskId} {
-      allow create: if isOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
   }
 }
