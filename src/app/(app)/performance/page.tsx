@@ -60,12 +60,14 @@ export default function PerformancePage() {
   useEffect(() => {
     if (historicalMetrics && historicalMetrics.length > 0) {
       const latest = historicalMetrics[historicalMetrics.length - 1];
-      setCurrentMetrics({
-        followers: latest.followers,
-        engagementRate: latest.engagementRate,
-        reach: latest.reach,
-        impressions: latest.impressions,
-      });
+      if (latest) {
+        setCurrentMetrics({
+          followers: latest.followers,
+          engagementRate: latest.engagementRate,
+          reach: latest.reach,
+          impressions: latest.impressions,
+        });
+      }
     }
   }, [historicalMetrics]);
 
@@ -111,10 +113,12 @@ export default function PerformancePage() {
     handleAnalyze();
   };
 
-  const chartData = (historicalMetrics || []).map(metric => ({
-    date: format((metric.date as Timestamp).toDate(), 'dd/MM'),
-    reach: metric.reach,
-  }));
+  const chartData = (historicalMetrics || [])
+    .filter(metric => !!metric.date) // Filter out metrics where date is not yet set
+    .map(metric => ({
+        date: format((metric.date as Timestamp).toDate(), 'dd/MM'),
+        reach: metric.reach,
+    }));
 
   return (
     <div className="space-y-6">
