@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Link as LinkIcon, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { summarizeInspirationContent } from '@/ai/flows/summarize-inspiration-content';
 import { useToast } from '@/hooks/use-toast';
 import placeholderImages from '@/lib/placeholder-images.json';
 import Image from 'next/image';
@@ -153,29 +152,6 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
     const [photoUrl, setPhotoUrl] = useState('');
     const [socialLink, setSocialLink] = useState('');
     const [category, setCategory] = useState<ContentType | ''>('');
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-    const handleAnalyze = async () => {
-        if(!socialLink) {
-            toast({ variant: 'destructive', title: "Please enter a social link."});
-            return;
-        }
-        setIsAnalyzing(true);
-        try {
-            const result = await summarizeInspirationContent({ creatorLink: socialLink });
-            const matchedCategory = contentTypes.find(c => result.category.includes(c));
-            if (matchedCategory) {
-                setCategory(matchedCategory);
-                toast({ title: "Analysis complete!", description: `Suggested category: ${matchedCategory}`});
-            } else {
-                toast({ variant: 'destructive', title: "Could not determine category", description: "Please select one manually." });
-            }
-        } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: "Analysis failed", description: "Could not analyze the link. Please try again." });
-        }
-        setIsAnalyzing(false);
-    }
     
     const handleSubmit = () => {
         if (name && photoUrl && socialLink && category) {
@@ -194,21 +170,16 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="socialLink">Social Link</Label>
-                    <div className="flex gap-2">
-                        <Input id="socialLink" value={socialLink} onChange={e => setSocialLink(e.target.value)} placeholder="https://youtube.com/..." />
-                        <Button variant="outline" onClick={handleAnalyze} disabled={isAnalyzing}>
-                            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4"/>}
-                        </Button>
-                    </div>
-                </div>
-                <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
                     <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Creator's name" />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="photoUrl">Photo URL</Label>
                     <Input id="photoUrl" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="socialLink">Social Link</Label>
+                    <Input id="socialLink" value={socialLink} onChange={e => setSocialLink(e.target.value)} placeholder="https://youtube.com/..." />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="category">Content Category</Label>
