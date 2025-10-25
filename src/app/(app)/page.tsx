@@ -55,6 +55,8 @@ function centerAspectCrop(
     crop: PixelCrop,
   ): Promise<string> {
     const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
     canvas.width = crop.width;
     canvas.height = crop.height;
     const ctx = canvas.getContext('2d');
@@ -62,9 +64,6 @@ function centerAspectCrop(
     if (!ctx) {
       throw new Error('No 2d context');
     }
-  
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
   
     ctx.drawImage(
       image,
@@ -238,7 +237,7 @@ function InspirationalQuoteCard() {
                 </DialogClose>
                 <Button onClick={handleCropComplete} disabled={isSaving || !completedCrop?.width || !completedCrop?.height}>
                     {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2"/>}
-                    Cortar e Guardar
+                    Cortar e Confirmar
                 </Button>
             </DialogFooter>
             </DialogContent>
@@ -326,3 +325,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    

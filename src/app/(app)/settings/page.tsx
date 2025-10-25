@@ -63,6 +63,8 @@ function centerAspectCrop(
     crop: PixelCrop,
   ): Promise<string> {
     const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
     canvas.width = crop.width;
     canvas.height = crop.height;
     const ctx = canvas.getContext('2d');
@@ -70,9 +72,6 @@ function centerAspectCrop(
     if (!ctx) {
       throw new Error('No 2d context');
     }
-  
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
   
     ctx.drawImage(
       image,
@@ -141,6 +140,42 @@ function ProfileSettings() {
     }
   }, [userProfile, user]);
 
+  useEffect(() => {
+    if (!newAvatarCropped || !user || !userProfileDoc) return;
+    
+    const uploadImage = async () => {
+        setIsSaving(true);
+        try {
+            const storage = getStorage();
+            const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
+            await uploadString(avatarRef, newAvatarCropped, 'data_url');
+            const finalAvatarUrl = await getDownloadURL(avatarRef);
+
+            await updateDoc(userProfileDoc, { avatar: finalAvatarUrl });
+            
+            setDisplayAvatar(finalAvatarUrl); 
+            setNewAvatarCropped(null); // Reset cropped image state
+            toast({
+                title: "Avatar Atualizado",
+                description: "A sua nova foto de perfil foi guardada.",
+            });
+
+        } catch (e) {
+            console.error("Error uploading avatar: ", e);
+            toast({
+                variant: 'destructive',
+                title: "Erro ao Guardar Avatar",
+                description: "Não foi possível guardar a sua nova foto.",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    uploadImage();
+  }, [newAvatarCropped, user, userProfileDoc, toast]);
+
+
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -165,45 +200,21 @@ function ProfileSettings() {
   }
 
   const handleTriggerSave = async () => {
-    if (!user || !userProfileDoc) return;
-    if (!hasChanges) return;
+    if (!user || !userProfileDoc || name === originalName) return;
 
     setIsSaving(true);
     try {
-        const profileUpdates: Partial<UserProfile> = {};
-
-        // Upload new avatar if one was cropped
-        if (newAvatarCropped && newAvatarCropped.startsWith('data:image')) {
-            const storage = getStorage();
-            const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-            await uploadString(avatarRef, newAvatarCropped, 'data_url');
-            const finalAvatarUrl = await getDownloadURL(avatarRef);
-            profileUpdates.avatar = finalAvatarUrl;
-            setDisplayAvatar(finalAvatarUrl); 
-        }
-
-        // Add name to updates if it was changed
-        if (name !== originalName) {
-            profileUpdates.name = name;
-        }
-
-        // Perform the update if there's anything to update
-        if (Object.keys(profileUpdates).length > 0) {
-            await updateDoc(userProfileDoc, profileUpdates);
-        }
-
-        setNewAvatarCropped(null); // Reset cropped image state
-
+        await updateDoc(userProfileDoc, { name: name });
         toast({
             title: "Perfil Atualizado",
-            description: "As suas alterações foram guardadas com sucesso.",
+            description: "O seu nome foi guardado com sucesso.",
         });
     } catch (e) {
-        console.error("Error saving profile: ", e);
+        console.error("Error saving name: ", e);
         toast({
             variant: 'destructive',
             title: "Erro ao Guardar",
-            description: "Não foi possível guardar as alterações no seu perfil.",
+            description: "Não foi possível guardar as alterações no seu nome.",
         });
     } finally {
         setIsSaving(false);
@@ -271,7 +282,7 @@ function ProfileSettings() {
             </Avatar>
             <div className="flex flex-col gap-2">
               <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
-              <Button onClick={() => fileInputRef.current?.click()}>Mudar Foto</Button>
+              <Button onClick={() => fileInputRef.current?.click()} disabled={isSaving}>Mudar Foto</Button>
               <p className="text-xs text-muted-foreground">JPG ou PNG. 1MB no máximo.</p>
             </div>
           </div>
@@ -285,7 +296,7 @@ function ProfileSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleTriggerSave} disabled={isSaving || !hasChanges}>
+          <Button onClick={handleTriggerSave} disabled={isSaving || name === originalName}>
             {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Guardar Alterações
             </Button>
@@ -325,12 +336,14 @@ function ProfileSettings() {
           )}
           <DialogFooter>
             <DialogClose asChild>
-                <Button variant="outline">Cancelar</Button>
+                <Button variant="outline" disabled={isSaving}>Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleCropComplete} disabled={!completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
+            <Button onClick={handleCropComplete} disabled={isSaving || !completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+
+    
