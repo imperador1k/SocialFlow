@@ -49,7 +49,7 @@ import { Badge } from '@/components/ui/badge';
 const initialIdeas: ContentIdea[] = [
   {
     id: 1,
-    description: 'A funny compilation of gaming fails from the past week.',
+    description: 'Uma compilação divertida de falhas em jogos da última semana.',
     videoLink: 'https://youtube.com/example1',
     contentType: 'Humor/Meme',
     isFavorite: true,
@@ -57,7 +57,7 @@ const initialIdeas: ContentIdea[] = [
   },
   {
     id: 2,
-    description: 'Tutorial on how to master a difficult combo in the new fighting game.',
+    description: 'Tutorial sobre como dominar um combo difícil no novo jogo de luta.',
     videoLink: '',
     contentType: 'Skill/Treino',
     isFavorite: false,
@@ -65,7 +65,7 @@ const initialIdeas: ContentIdea[] = [
   },
   {
     id: 3,
-    description: 'A day in my life as a full-time content creator.',
+    description: 'Um dia na minha vida como criador de conteúdo em tempo integral.',
     videoLink: 'https://tiktok.com/example2',
     contentType: 'Mindset/Rotina',
     isFavorite: false,
@@ -74,10 +74,12 @@ const initialIdeas: ContentIdea[] = [
 ];
 
 const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'];
+type FilterType = ContentType | 'All' | 'Favorites';
+
 
 export default function IdeasPage() {
   const [ideas, setIdeas] = useState<ContentIdea[]>(initialIdeas);
-  const [filter, setFilter] = useState<ContentType | 'All'>('All');
+  const [filter, setFilter] = useState<FilterType>('All');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
   const toggleFavorite = (id: number) => {
@@ -97,19 +99,23 @@ export default function IdeasPage() {
     setAddDialogOpen(false);
   };
   
-  const filteredIdeas = ideas.filter(idea => filter === 'All' || idea.contentType === filter);
+  const filteredIdeas = ideas.filter(idea => {
+    if (filter === 'All') return true;
+    if (filter === 'Favorites') return idea.isFavorite;
+    return idea.contentType === filter;
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Content Ideas</h1>
-          <p className="text-muted-foreground">Manage and brainstorm your next viral video.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Ideias de Conteúdo</h1>
+          <p className="text-muted-foreground">Gerencie e brainstorm suas próximas ideias de vídeo viral.</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
                 <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Add Idea
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Ideia
                 </Button>
             </DialogTrigger>
             <AddIdeaDialog onAddIdea={addIdea} />
@@ -120,18 +126,19 @@ export default function IdeasPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Idea List</CardTitle>
+          <CardTitle>Sua Lista de Ideias</CardTitle>
           <CardDescription>
-            Here are all your content ideas. Filter them by category.
+            Aqui estão todas as suas ideias de conteúdo. Filtre-as por categoria.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={filter} onValueChange={(value) => setFilter(value as any)}>
             <TabsList className="mb-4">
-              <TabsTrigger value="All">All</TabsTrigger>
+              <TabsTrigger value="All">Todas</TabsTrigger>
               {contentTypes.map((type) => (
                 <TabsTrigger key={type} value={type}>{type.split('/')[0]}</TabsTrigger>
               ))}
+              <TabsTrigger value="Favorites">Favoritos</TabsTrigger>
             </TabsList>
           </Tabs>
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -147,7 +154,7 @@ export default function IdeasPage() {
                 ))
             ) : (
                 <div className="text-center py-12 text-muted-foreground col-span-full">
-                    <p>No ideas found for this category. Time to brainstorm!</p>
+                    <p>Nenhuma ideia encontrada para esta categoria. Hora de ter ideias!</p>
                 </div>
             )}
           </div>
@@ -181,7 +188,7 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
             <CardFooter className="flex justify-between items-center mt-auto pt-4 border-t">
                 <div className="flex items-center space-x-2">
                     <Switch id={`completed-${idea.id}`} checked={idea.isCompleted} onCheckedChange={() => onToggleCompleted(idea.id)} />
-                    <Label htmlFor={`completed-${idea.id}`} className="text-sm">Done</Label>
+                    <Label htmlFor={`completed-${idea.id}`} className="text-sm">Feito</Label>
                 </div>
                 <div className='flex items-center gap-1'>
                     {idea.videoLink && (
@@ -223,22 +230,22 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
     return (
          <DialogContent>
             <DialogHeader>
-                <DialogTitle>Add a New Content Idea</DialogTitle>
+                <DialogTitle>Adicionar Nova Ideia de Conteúdo</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="description">Idea Description</Label>
-                    <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe your brilliant idea..." />
+                    <Label htmlFor="description">Descrição da Ideia</Label>
+                    <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva sua ideia brilhante..." />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="videoLink">Inspiration Link (Optional)</Label>
+                    <Label htmlFor="videoLink">Link de Inspiração (Opcional)</Label>
                     <Input id="videoLink" value={videoLink} onChange={e => setVideoLink(e.target.value)} placeholder="https://youtube.com/..." />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="contentType">Content Type</Label>
+                    <Label htmlFor="contentType">Tipo de Conteúdo</Label>
                     <Select onValueChange={(v) => setContentType(v as ContentType)}>
                         <SelectTrigger id="contentType">
-                            <SelectValue placeholder="Select a content type" />
+                            <SelectValue placeholder="Selecione um tipo de conteúdo" />
                         </SelectTrigger>
                         <SelectContent>
                             {contentTypes.map((type) => (
@@ -249,8 +256,8 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={handleSubmit} disabled={!description || !contentType}>Add Idea</Button>
+                <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                <Button onClick={handleSubmit} disabled={!description || !contentType}>Adicionar Ideia</Button>
             </DialogFooter>
         </DialogContent>
     );
@@ -265,7 +272,7 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
     const handleGenerateIdeas = async () => {
         setIsLoading(true);
         try {
-            const result = await generateContentIdeas({ theme: 'gaming and streaming', contentType, numberOfIdeas: 3 });
+            const result = await generateContentIdeas({ theme: 'jogos e streaming', contentType, numberOfIdeas: 3 });
             result.ideas.forEach(ideaDesc => {
                 addIdea({
                     description: ideaDesc,
@@ -276,15 +283,15 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
                 });
             });
             toast({
-                title: "Ideas generated!",
-                description: "3 new ideas have been added to your list.",
+                title: "Ideias geradas!",
+                description: "3 novas ideias foram adicionadas à sua lista.",
             });
         } catch (error) {
             console.error(error);
             toast({
                 variant: 'destructive',
-                title: "Error",
-                description: "Failed to generate ideas. Please try again.",
+                title: "Erro",
+                description: "Falha ao gerar ideias. Por favor, tente novamente.",
             });
         }
         setIsLoading(false);
@@ -293,15 +300,15 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
     return (
         <Card className="bg-gradient-to-br from-card to-secondary">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Lightbulb className="text-primary glow-icon" /> AI Brainstorm Assistant</CardTitle>
-                <CardDescription>Feeling stuck? Let AI generate some ideas for you.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Lightbulb className="text-primary glow-icon" /> Assistente de Brainstorm IA</CardTitle>
+                <CardDescription>Está sem ideias? Deixe a IA gerar algumas para você.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-4 items-center">
                 <div className="w-full sm:w-auto flex-grow space-y-2">
-                    <Label htmlFor="ai-contentType">Select a Content Type</Label>
+                    <Label htmlFor="ai-contentType">Selecione um Tipo de Conteúdo</Label>
                      <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)}>
                         <SelectTrigger id="ai-contentType">
-                            <SelectValue placeholder="Select a content type" />
+                            <SelectValue placeholder="Selecione um tipo de conteúdo" />
                         </SelectTrigger>
                         <SelectContent>
                             {contentTypes.map((type) => (
@@ -317,7 +324,7 @@ function AIBrainstormCard({ addIdea }: { addIdea: (idea: Omit<ContentIdea, 'id'>
                         ) : (
                             <Sparkles className="mr-2 h-4 w-4" />
                         )}
-                        Generate Ideas
+                        Gerar Ideias
                     </Button>
                 </div>
             </CardContent>

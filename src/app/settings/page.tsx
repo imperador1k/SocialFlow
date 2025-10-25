@@ -12,10 +12,10 @@ import { cn } from '@/lib/utils';
 import placeholderImages from '@/lib/placeholder-images.json';
 
 const settingsNav = [
-  { name: 'Profile', icon: User },
-  { name: 'Notifications', icon: Bell },
-  { name: 'Appearance', icon: Palette },
-  { name: 'Security', icon: Lock },
+  { name: 'Perfil', icon: User },
+  { name: 'Notificações', icon: Bell },
+  { name: 'Aparência', icon: Palette },
+  { name: 'Segurança', icon: Lock },
 ];
 
 const mockUser = {
@@ -25,13 +25,13 @@ const mockUser = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('Profile');
+  const [activeTab, setActiveTab] = useState('Perfil');
 
   return (
     <div className="space-y-6">
        <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+        <h1 className="text-2xl font-bold tracking-tight">Definições</h1>
+        <p className="text-muted-foreground">Gerencie as definições e preferências da sua conta.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         <nav className="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:col-span-1">
@@ -51,8 +51,8 @@ export default function SettingsPage() {
           ))}
         </nav>
         <div className="lg:col-span-4">
-          {activeTab === 'Profile' && <ProfileSettings />}
-          {activeTab !== 'Profile' && <PlaceholderSection title={activeTab} />}
+          {activeTab === 'Perfil' && <ProfileSettings />}
+          {activeTab !== 'Perfil' && <PlaceholderSection title={activeTab} />}
         </div>
       </div>
     </div>
@@ -64,8 +64,8 @@ function ProfileSettings() {
         <div className="space-y-8">
             <Card>
                 <CardHeader>
-                <CardTitle>Profile</CardTitle>
-                <CardDescription>This is how others will see you on the site.</CardDescription>
+                <CardTitle>Perfil</CardTitle>
+                <CardDescription>É assim que os outros o verão no site.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -74,12 +74,12 @@ function ProfileSettings() {
                     <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-2">
-                        <Button>Change Photo</Button>
-                        <p className="text-xs text-muted-foreground">JPG, GIF or PNG. 1MB max.</p>
+                        <Button>Mudar Foto</Button>
+                        <p className="text-xs text-muted-foreground">JPG, GIF ou PNG. 1MB no máximo.</p>
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Nome</Label>
                     <Input id="name" defaultValue={mockUser.name} />
                 </div>
                 <div className="space-y-2">
@@ -88,19 +88,19 @@ function ProfileSettings() {
                 </div>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
-                <Button>Save Changes</Button>
+                <Button>Guardar Alterações</Button>
                 </CardFooter>
             </Card>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Log out</CardTitle>
-                    <CardDescription>Log out of your account on this device.</CardDescription>
+                    <CardTitle>Terminar sessão</CardTitle>
+                    <CardDescription>Termine a sessão da sua conta neste dispositivo.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button variant="destructive">
                         <LogOut className="mr-2 h-4 w-4" />
-                        Log out
+                        Terminar sessão
                     </Button>
                 </CardContent>
             </Card>
@@ -113,11 +113,11 @@ function PlaceholderSection({ title }: { title: string }) {
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
-          <CardDescription>Settings for {title.toLowerCase()} will be available here soon.</CardDescription>
+          <CardDescription>As definições para {title.toLowerCase()} estarão disponíveis aqui em breve.</CardDescription>
         </CardHeader>
         <CardContent>
            <div className="flex h-[200px] w-full items-center justify-center rounded-md border-2 border-dashed">
-                <p className="text-muted-foreground">Coming Soon</p>
+                <p className="text-muted-foreground">Em Breve</p>
             </div>
         </CardContent>
       </Card>

@@ -24,11 +24,11 @@ import placeholderImages from '@/lib/placeholder-images.json';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/performance', label: 'Performance', icon: BarChart2 },
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/ideas', label: 'Ideas', icon: Lightbulb },
-  { href: '/inspiration', label: 'Inspiration', icon: Sparkles },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
-  { href: '/strategy', label: 'Strategy', icon: FileText },
+  { href: '/calendar', label: 'Calendário', icon: Calendar },
+  { href: '/ideas', label: 'Ideias', icon: Lightbulb },
+  { href: '/inspiration', label: 'Inspiração', icon: Sparkles },
+  { href: '/tasks', label: 'Tarefas', icon: CheckSquare },
+  { href: '/strategy', label: 'Estratégia', icon: FileText },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -87,36 +87,32 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link href="/settings">
                 <Button variant="ghost" size="icon" className="shrink-0">
                     <User className="h-5 w-5" />
-                    <span className="sr-only">Settings</span>
+                    <span className="sr-only">Definições</span>
                 </Button>
             </Link>
             <Sheet>
             <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 md:hidden">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <span className="sr-only">Abrir menu de navegação</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] sm:w-[320px]">
-                <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
+            <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0">
+                <SheetTitle className="sr-only">Menu de Navegação Móvel</SheetTitle>
                 <div className="flex flex-col h-full">
                     <div className='p-4 border-b'>
-                        <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
-                            <Sparkles className="h-6 w-6 text-primary glow-icon" />
-                            <span className="font-bold">SocialFlow</span>
-                        </Link>
-                        <div className="flex items-center gap-3 mt-4">
-                            <Avatar>
-                                <AvatarImage src={placeholderImages.creators[4].src} alt="User Avatar" />
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                                <AvatarImage src={placeholderImages.creators[4].src} alt="Avatar do Utilizador" />
                                 <AvatarFallback>V</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-medium">Valter</p>
+                                <p className="font-medium text-lg">Valter</p>
                                 <p className="text-sm text-muted-foreground">valter@email.com</p>
                             </div>
                         </div>
                     </div>
-                    <div className="flex-grow overflow-y-auto">
+                    <div className="flex-grow overflow-y-auto p-4">
                         {mobileNav}
                     </div>
                     <div className="p-4 mt-auto border-t">
@@ -128,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             )}
                             >
                             <User className="h-5 w-5" />
-                            Settings
+                            Definições
                         </Link>
                     </div>
                 </div>

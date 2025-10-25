@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2 } from 'lucide-react';
 
 const initialTasks: Task[] = [
-  { id: 1, text: 'Brainstorm 5 new video ideas for TikTok', completed: false },
-  { id: 2, text: 'Film and edit "Day in the Life" YouTube video', completed: false },
-  { id: 3, text: 'Schedule Instagram posts for next week', completed: true },
-  { id: 4, text: 'Engage with comments for 30 minutes', completed: false },
+  { id: 1, text: 'Brainstorm de 5 novas ideias de vídeo para o TikTok', completed: false },
+  { id: 2, text: 'Gravar e editar o vídeo "Um Dia na Vida" para o YouTube', completed: false },
+  { id: 3, text: 'Agendar posts do Instagram para a próxima semana', completed: true },
+  { id: 4, text: 'Interagir com comentários por 30 minutos', completed: false },
 ];
 
 export default function TasksPage() {
@@ -43,8 +43,8 @@ export default function TasksPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Task Manager</CardTitle>
-        <CardDescription>Manage your social media activities.</CardDescription>
+        <CardTitle>Gestor de Tarefas</CardTitle>
+        <CardDescription>Gerencie suas atividades de redes sociais.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex w-full items-center space-x-2 mb-6">
@@ -52,10 +52,10 @@ export default function TasksPage() {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="e.g., Edit new YouTube video"
+            placeholder="ex: Editar novo vídeo do YouTube"
           />
           <Button onClick={handleAddTask}>
-            <Plus className="mr-2 h-4 w-4" /> Add Task
+            <Plus className="mr-2 h-4 w-4" /> Adicionar Tarefa
           </Button>
         </div>
         <div className="space-y-4">
@@ -66,7 +66,7 @@ export default function TasksPage() {
                   id={`task-${task.id}`}
                   checked={task.completed}
                   onCheckedChange={() => handleToggleTask(task.id)}
-                  aria-label={`Mark task as ${task.completed ? 'incomplete' : 'complete'}`}
+                  aria-label={`Marcar tarefa como ${task.completed ? 'incompleta' : 'completa'}`}
                 />
                 <label
                   htmlFor={`task-${task.id}`}
@@ -79,7 +79,7 @@ export default function TasksPage() {
                   size="icon"
                   onClick={() => handleDeleteTask(task.id)}
                   className="h-8 w-8 opacity-0 group-hover:opacity-100"
-                  aria-label="Delete task"
+                  aria-label="Excluir tarefa"
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -87,7 +87,7 @@ export default function TasksPage() {
             ))
           ) : (
              <div className="text-center py-8 text-muted-foreground">
-                <p>No tasks yet. Add one to get started!</p>
+                <p>Nenhuma tarefa ainda. Adicione uma para começar!</p>
             </div>
           )}
         </div>

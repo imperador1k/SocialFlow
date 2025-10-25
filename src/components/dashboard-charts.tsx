@@ -15,21 +15,21 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts"
 
 const chartData = [
-    { month: "January", engagement: 186, followers: 800 },
-    { month: "February", engagement: 305, followers: 950 },
-    { month: "March", engagement: 237, followers: 1100 },
-    { month: "April", engagement: 273, followers: 1300 },
-    { month: "May", engagement: 209, followers: 1550 },
-    { month: "June", engagement: 214, followers: 1700 },
+    { month: "Janeiro", engagement: 186, followers: 800 },
+    { month: "Fevereiro", engagement: 305, followers: 950 },
+    { month: "Março", engagement: 237, followers: 1100 },
+    { month: "Abril", engagement: 273, followers: 1300 },
+    { month: "Maio", engagement: 209, followers: 1550 },
+    { month: "Junho", engagement: 214, followers: 1700 },
 ]
 
 const chartConfig = {
     engagement: {
-        label: "Engagement",
+        label: "Engajamento",
         color: "hsl(var(--chart-1))",
     },
     followers: {
-        label: "Followers",
+        label: "Seguidores",
         color: "hsl(var(--chart-2))",
     },
 }
@@ -39,8 +39,8 @@ export function DashboardCharts() {
         <>
             <Card className="md:col-span-2">
                 <CardHeader>
-                    <CardTitle>Content Engagement</CardTitle>
-                    <CardDescription>January - June 2024</CardDescription>
+                    <CardTitle>Engajamento de Conteúdo</CardTitle>
+                    <CardDescription>Janeiro - Junho 2024</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="h-[200px] w-full">
@@ -63,8 +63,8 @@ export function DashboardCharts() {
             </Card>
              <Card className="md:col-span-2">
                 <CardHeader>
-                    <CardTitle>Follower Growth</CardTitle>
-                    <CardDescription>Weekly growth trend.</CardDescription>
+                    <CardTitle>Crescimento de Seguidores</CardTitle>
+                    <CardDescription>Tendência de crescimento semanal.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="h-[200px] w-full">

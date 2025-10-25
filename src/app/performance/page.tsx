@@ -36,7 +36,7 @@ const chartData = [
   { date: 'Wk 6', value: 3200 },
 ];
 const chartConfig = {
-  value: { label: 'Reach', color: 'hsl(var(--chart-1))' },
+  value: { label: 'Alcance', color: 'hsl(var(--chart-1))' },
 };
 
 
@@ -54,7 +54,7 @@ export default function PerformancePage() {
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setSummary('');
-    const metricsString = `Followers: ${metrics.followers}, Engagement Rate: ${metrics.engagementRate}%, Reach: ${metrics.reach}, Impressions: ${metrics.impressions}`;
+    const metricsString = `Seguidores: ${metrics.followers}, Taxa de Engajamento: ${metrics.engagementRate}%, Alcance: ${metrics.reach}, Impressões: ${metrics.impressions}`;
     try {
       const result = await summarizePerformanceAnalysis({ metrics: metricsString });
       setSummary(result.summary);
@@ -62,8 +62,8 @@ export default function PerformancePage() {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Analysis Failed',
-        description: 'Could not generate summary. Please try again.',
+        title: 'Análise Falhou',
+        description: 'Não foi possível gerar o resumo. Por favor, tente novamente.',
       });
     }
     setIsAnalyzing(false);
@@ -73,15 +73,15 @@ export default function PerformancePage() {
     <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Performance Analysis</h1>
-                <p className="text-muted-foreground">Analyze and understand your social media growth.</p>
+                <h1 className="text-2xl font-bold tracking-tight">Análise de Performance</h1>
+                <p className="text-muted-foreground">Analise e entenda o crescimento das suas redes sociais.</p>
             </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Followers</CardTitle>
+                    <CardTitle className="text-sm font-medium">Seguidores</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -90,7 +90,7 @@ export default function PerformancePage() {
             </Card>
             <Card>
                 <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                    <CardTitle className="text-sm font-medium">Taxa de Engajamento</CardTitle>
                     <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -99,7 +99,7 @@ export default function PerformancePage() {
             </Card>
             <Card>
                 <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Reach</CardTitle>
+                    <CardTitle className="text-sm font-medium">Alcance</CardTitle>
                     <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -108,7 +108,7 @@ export default function PerformancePage() {
             </Card>
             <Card>
                 <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Impressions</CardTitle>
+                    <CardTitle className="text-sm font-medium">Impressões</CardTitle>
                     <BarChart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -120,29 +120,29 @@ export default function PerformancePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-1">
                 <CardHeader>
-                    <CardTitle>Update Metrics</CardTitle>
-                    <CardDescription>Manually enter your latest stats to get an analysis.</CardDescription>
+                    <CardTitle>Atualizar Métricas</CardTitle>
+                    <CardDescription>Insira manualmente suas últimas estatísticas para obter uma análise.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="followers">Followers</Label>
+                        <Label htmlFor="followers">Seguidores</Label>
                         <Input id="followers" name="followers" type="number" value={metrics.followers} onChange={handleInputChange} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="engagementRate">Engagement Rate (%)</Label>
+                        <Label htmlFor="engagementRate">Taxa de Engajamento (%)</Label>
                         <Input id="engagementRate" name="engagementRate" type="number" step="0.1" value={metrics.engagementRate} onChange={handleInputChange} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="reach">Reach</Label>
+                        <Label htmlFor="reach">Alcance</Label>
                         <Input id="reach" name="reach" type="number" value={metrics.reach} onChange={handleInputChange} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="impressions">Impressions</Label>
+                        <Label htmlFor="impressions">Impressões</Label>
                         <Input id="impressions" name="impressions" type="number" value={metrics.impressions} onChange={handleInputChange} />
                     </div>
                     <Button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full">
                         {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Analyze Performance
+                        Analisar Performance
                     </Button>
                 </CardContent>
             </Card>
@@ -150,8 +150,8 @@ export default function PerformancePage() {
             <div className="lg:col-span-2 space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>AI-Powered Summary</CardTitle>
-                        <CardDescription>A concise overview of your performance.</CardDescription>
+                        <CardTitle>Resumo via IA</CardTitle>
+                        <CardDescription>Uma visão geral concisa da sua performance.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isAnalyzing && (
@@ -164,7 +164,7 @@ export default function PerformancePage() {
                         )}
                          {!summary && !isAnalyzing && (
                              <div className="text-center py-8 text-muted-foreground">
-                                <p>Click "Analyze Performance" to generate a summary.</p>
+                                <p>Clique em "Analisar Performance" para gerar um resumo.</p>
                             </div>
                         )}
                     </CardContent>
@@ -172,8 +172,8 @@ export default function PerformancePage() {
 
                  <Card>
                     <CardHeader>
-                        <CardTitle>Reach Over Time</CardTitle>
-                        <CardDescription>Shows weekly audience reach.</CardDescription>
+                        <CardTitle>Alcance ao Longo do Tempo</CardTitle>
+                        <CardDescription>Mostra o alcance semanal da audiência.</CardDescription>
                     </CardHeader>
                     <CardContent>
                          <ChartContainer config={chartConfig} className="h-[200px] w-full">

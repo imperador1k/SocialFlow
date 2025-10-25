@@ -81,13 +81,13 @@ export default function InspirationPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Creator Inspiration</h1>
-                    <p className="text-muted-foreground">Manage your list of inspiring creators.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Inspiração de Criadores</h1>
+                    <p className="text-muted-foreground">Gerencie sua lista de criadores inspiradores.</p>
                 </div>
                  <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>
-                            <UserPlus className="mr-2 h-4 w-4" /> Add Creator
+                            <UserPlus className="mr-2 h-4 w-4" /> Adicionar Criador
                         </Button>
                     </DialogTrigger>
                     <AddCreatorDialog onAddCreator={addCreator} />
@@ -98,7 +98,7 @@ export default function InspirationPage() {
                 <CardHeader>
                     <Tabs value={filter} onValueChange={(value) => setFilter(value as any)}>
                         <TabsList>
-                            <TabsTrigger value="All">All</TabsTrigger>
+                            <TabsTrigger value="All">Todos</TabsTrigger>
                             {contentTypes.map((type) => (
                                 <TabsTrigger key={type} value={type}>{type.split('/')[0]}</TabsTrigger>
                             ))}
@@ -113,7 +113,7 @@ export default function InspirationPage() {
                             ))
                         ) : (
                              <div className="text-center py-12 text-muted-foreground col-span-full">
-                                <p>No creators found for this category.</p>
+                                <p>Nenhum criador encontrado para esta categoria.</p>
                             </div>
                         )}
                     </div>
@@ -140,7 +140,7 @@ function CreatorCard({ creator, onDelete }: { creator: Creator, onDelete: (id: n
             </CardHeader>
             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 text-destructive/70 hover:text-destructive bg-card/50 hover:bg-card/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(creator.id)}>
                 <Trash2 className="h-4 w-4"/>
-                <span className="sr-only">Delete creator</span>
+                <span className="sr-only">Excluir criador</span>
             </Button>
         </Card>
     );
@@ -166,26 +166,26 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
     return (
          <DialogContent>
             <DialogHeader>
-                <DialogTitle>Add New Creator</DialogTitle>
+                <DialogTitle>Adicionar Novo Criador</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Creator's name" />
+                    <Label htmlFor="name">Nome</Label>
+                    <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Nome do criador" />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="photoUrl">Photo URL</Label>
+                    <Label htmlFor="photoUrl">URL da Foto</Label>
                     <Input id="photoUrl" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="socialLink">Social Link</Label>
+                    <Label htmlFor="socialLink">Link Social</Label>
                     <Input id="socialLink" value={socialLink} onChange={e => setSocialLink(e.target.value)} placeholder="https://youtube.com/..." />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="category">Content Category</Label>
+                    <Label htmlFor="category">Categoria de Conteúdo</Label>
                     <Select value={category} onValueChange={(v) => setCategory(v as ContentType)}>
                         <SelectTrigger id="category">
-                            <SelectValue placeholder="Select a category" />
+                            <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
                              {contentTypes.map((type) => (
@@ -196,8 +196,8 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={handleSubmit} disabled={!name || !photoUrl || !socialLink || !category}>Add Creator</Button>
+                <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                <Button onClick={handleSubmit} disabled={!name || !photoUrl || !socialLink || !category}>Adicionar Criador</Button>
             </DialogFooter>
         </DialogContent>
     );

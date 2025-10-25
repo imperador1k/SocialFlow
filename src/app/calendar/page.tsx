@@ -25,28 +25,28 @@ import { Badge } from '@/components/ui/badge';
 const initialEvents: CalendarEvent[] = [
   {
     id: 1,
-    title: 'New Reel: "My Morning Routine"',
+    title: 'New Reel: "Minha Rotina Matinal"',
     date: new Date(),
     platform: 'Instagram',
     contentType: 'Mindset/Rotina',
   },
   {
     id: 2,
-    title: 'Shorts: "3 Tips for Better Aim"',
+    title: 'Shorts: "3 Dicas para Mirar Melhor"',
     date: new Date(),
     platform: 'YouTube',
     contentType: 'Skill/Treino',
   },
   {
     id: 3,
-    title: 'TikTok: Funny gaming moment',
+    title: 'TikTok: Momento engraçado de gameplay',
     date: add(new Date(), { days: 2 }),
     platform: 'TikTok',
     contentType: 'Humor/Meme',
   },
   {
     id: 4,
-    title: 'Long-form Video: "How I grew my channel"',
+    title: 'Vídeo Longo: "Como eu cresci meu canal"',
     date: add(new Date(), { days: 4 }),
     platform: 'YouTube',
     contentType: 'YouTube',
@@ -141,10 +141,10 @@ export default function CalendarPage() {
           <Card>
             <CardHeader>
               <CardTitle>
-                Schedule for <span className="text-primary">{date ? format(date, 'MMMM do') : '...'}</span>
+                Agenda para <span className="text-primary">{date ? format(date, 'd \'de\' MMMM') : '...'}</span>
               </CardTitle>
               <CardDescription>
-                {selectedDayEvents.length} post{selectedDayEvents.length !== 1 ? 's' : ''} scheduled.
+                {selectedDayEvents.length} post{selectedDayEvents.length !== 1 ? 's' : ''} agendado{selectedDayEvents.length !== 1 ? 's' : ''}.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -163,7 +163,7 @@ export default function CalendarPage() {
                   ))
                 ) : (
                   <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">No posts scheduled for this day.</p>
+                    <p className="text-muted-foreground">Nenhum post agendado para este dia.</p>
                   </div>
                 )}
               </div>
@@ -172,7 +172,7 @@ export default function CalendarPage() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full" disabled={!date}>
-                <PlusCircle className="mr-2" /> Add Post
+                <PlusCircle className="mr-2" /> Adicionar Post
               </Button>
             </DialogTrigger>
             <AddEventDialog onAddEvent={handleAddEvent} />
@@ -199,19 +199,19 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Schedule a New Post</DialogTitle>
+        <DialogTitle>Agendar um Novo Post</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
         <div className="space-y-2">
-          <Label htmlFor="title">Post Title</Label>
-          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. New video about..." />
+          <Label htmlFor="title">Título do Post</Label>
+          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ex: Novo vídeo sobre..." />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="platform">Platform</Label>
+            <Label htmlFor="platform">Plataforma</Label>
             <Select onValueChange={(v) => setPlatform(v as any)}>
               <SelectTrigger id="platform">
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Instagram">Instagram</SelectItem>
@@ -221,10 +221,10 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contentType">Content Type</Label>
+            <Label htmlFor="contentType">Tipo de Conteúdo</Label>
             <Select onValueChange={(v) => setContentType(v as any)}>
               <SelectTrigger id="contentType">
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Humor/Meme">Humor/Meme</SelectItem>
@@ -238,15 +238,12 @@ function AddEventDialog({ onAddEvent }: { onAddEvent: (event: Omit<CalendarEvent
       </div>
       <DialogFooter>
         <DialogClose asChild>
-          <Button variant="outline">Cancel</Button>
+          <Button variant="outline">Cancelar</Button>
         </DialogClose>
         <Button onClick={handleSubmit} disabled={!title || !platform || !contentType}>
-          Schedule Post
+          Agendar Post
         </Button>
       </DialogFooter>
     </DialogContent>
   );
 }
-
-
-    
