@@ -1,250 +1,161 @@
-/**
- * @fileOverview
- * This ruleset enforces a strict user-ownership model for all data stored in Firestore.
- * All data is nested under /users/{userId}, ensuring that only the authenticated user can
- * access their own data.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profile data.
- * - /users/{userId}/contentIdeas/{contentIdeaId}: Stores content ideas for a user.
- * - /users/{userId}/creators/{creatorId}: Stores creator inspiration entries for a user.
- * - /users/{userId}/contentPlans/{contentPlanId}: Stores content plans for a user.
- * - /users/{userId}/performanceMetrics/{performanceMetricId}: Stores performance metrics for a user.
- * - /users/{userId}/tasks/{taskId}: Stores tasks for a user.
- *
- * Key Security Decisions:
- * - User listing is disallowed.
- * - All write operations are protected by an ownership check.
- * - No data shape validation is performed beyond ownership checks.
- *
- * Denormalization for Authorization:
- * - User ownership is enforced through path-based rules (e.g., /users/{userId}/...).
- *   This eliminates the need for `get()` calls to validate ownership, improving performance and security.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces user-ownership for user profiles.
+     * @description Secures the /users/{userId} collection, ensuring only the authenticated user can manage their own profile.
      * @path /users/{userId}
-     * @allow (create) Signed-in user creates their own profile.
-     * @allow (get, list, update, delete) Signed-in user retrieves, updates, or deletes their own profile.
-     * @deny (create) Signed-in user attempts to create a profile with a mismatched userId.
-     * @deny (get, list, update, delete) Signed-in user attempts to access another user's profile.
+     * @allow (create) User with ID matching auth UID can create their profile.
+     * @allow (get, update, delete) User with ID matching auth UID can read, update, and delete their profile.
+     * @deny (create) User cannot create a profile with an ID that doesn't match their auth UID.
+     * @deny (update, delete) User cannot modify or delete another user's profile.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      // Helper function to check if the user is signed in and owns the resource.
-      function isSignedIn() {
-        return request.auth != null;
-      }
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Allow a user to create their own profile if signed in and the userId matches.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-
-      // Allow a user to get their own profile if signed in and the userId matches.
       allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false; // Listing users is not permitted.
 
-      // Only the owner can list profiles, which is no one. Listing users is not allowed.
-      allow list: if false;
-
-      // Allow a user to update their own profile if signed in and the userId matches and the document exists, and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-
-      // Allow a user to delete their own profile if signed in and the userId matches and the document exists.
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Enforces user-ownership for content ideas.
+     * @description Secures the /users/{userId}/contentIdeas/{contentIdeaId} collection, ensuring only the owner can manage their content ideas.
      * @path /users/{userId}/contentIdeas/{contentIdeaId}
-     * @allow (create) Signed-in user creates a content idea under their profile.
-     * @allow (get, list, update, delete) Signed-in user retrieves, updates, or deletes their own content idea.
-     * @deny (create) Signed-in user attempts to create a content idea under another user's profile.
-     * @deny (get, list, update, delete) Signed-in user attempts to access another user's content idea.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with ID matching parent path can create content ideas.
+     * @allow (get, update, delete) User with ID matching parent path can read, update, and delete their content ideas.
+     * @deny (create) User cannot create a content idea under another user's profile.
+     * @deny (update, delete) User cannot modify or delete another user's content idea.
+     * @principle Enforces document ownership and validates parent-child relationship.
      */
     match /users/{userId}/contentIdeas/{contentIdeaId} {
-      // Helper function to check if the user is signed in and owns the resource.
-      function isSignedIn() {
-        return request.auth != null;
-      }
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Allow a user to create a content idea if signed in and the userId matches.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow list: if false;
 
-      // Allow a user to get a content idea if signed in and the userId matches.
-      allow get: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to list their own content ideas.
-      allow list: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to update a content idea if signed in and the userId matches and the document exists and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-
-      // Allow a user to delete a content idea if signed in and the userId matches and the document exists.
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow update: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
     }
 
     /**
-     * @description Enforces user-ownership for creator inspiration entries.
+     * @description Secures the /users/{userId}/creators/{creatorId} collection, ensuring only the owner can manage their creator inspirations.
      * @path /users/{userId}/creators/{creatorId}
-     * @allow (create) Signed-in user creates a creator entry under their profile.
-     * @allow (get, list, update, delete) Signed-in user retrieves, updates, or deletes their own creator entry.
-     * @deny (create) Signed-in user attempts to create a creator entry under another user's profile.
-     * @deny (get, list, update, delete) Signed-in user attempts to access another user's creator entry.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with ID matching parent path can create creator inspirations.
+     * @allow (get, update, delete) User with ID matching parent path can read, update, and delete their creator inspirations.
+     * @deny (create) User cannot create a creator inspiration under another user's profile.
+     * @deny (update, delete) User cannot modify or delete another user's creator inspiration.
+     * @principle Enforces document ownership and validates parent-child relationship.
      */
     match /users/{userId}/creators/{creatorId} {
-      // Helper function to check if the user is signed in and owns the resource.
-      function isSignedIn() {
-        return request.auth != null;
-      }
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Allow a user to create a creator entry if signed in and the userId matches.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow list: if false;
 
-      // Allow a user to get a creator entry if signed in and the userId matches.
-      allow get: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to list their own creator entries.
-      allow list: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to update a creator entry if signed in and the userId matches and the document exists, and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-
-      // Allow a user to delete a creator entry if signed in and the userId matches and the document exists.
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow update: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
     }
 
     /**
-     * @description Enforces user-ownership for content plans.
+     * @description Secures the /users/{userId}/contentPlans/{contentPlanId} collection, ensuring only the owner can manage their content plans.
      * @path /users/{userId}/contentPlans/{contentPlanId}
-     * @allow (create) Signed-in user creates a content plan under their profile.
-     * @allow (get, list, update, delete) Signed-in user retrieves, updates, or deletes their own content plan.
-     * @deny (create) Signed-in user attempts to create a content plan under another user's profile.
-     * @deny (get, list, update, delete) Signed-in user attempts to access another user's content plan.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with ID matching parent path can create content plans.
+     * @allow (get, update, delete) User with ID matching parent path can read, update, and delete their content plans.
+     * @deny (create) User cannot create a content plan under another user's profile.
+     * @deny (update, delete) User cannot modify or delete another user's content plan.
+     * @principle Enforces document ownership and validates parent-child relationship.
      */
     match /users/{userId}/contentPlans/{contentPlanId} {
-      // Helper function to check if the user is signed in and owns the resource.
-      function isSignedIn() {
-        return request.auth != null;
-      }
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Allow a user to create a content plan if signed in and the userId matches.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow list: if false;
 
-      // Allow a user to get a content plan if signed in and the userId matches.
-      allow get: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to list their own content plans.
-      allow list: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to update a content plan if signed in and the userId matches and the document exists and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-
-      // Allow a user to delete a content plan if signed in and the userId matches and the document exists.
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow update: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
     }
 
     /**
-     * @description Enforces user-ownership for performance metrics.
+     * @description Secures the /users/{userId}/performanceMetrics/{performanceMetricId} collection, ensuring only the owner can manage their performance metrics.
      * @path /users/{userId}/performanceMetrics/{performanceMetricId}
-     * @allow (create) Signed-in user creates a performance metric entry under their profile.
-     * @allow (get, list, update, delete) Signed-in user retrieves, updates, or deletes their own performance metric entry.
-     * @deny (create) Signed-in user attempts to create a performance metric entry under another user's profile.
-     * @deny (get, list, update, delete) Signed-in user attempts to access another user's performance metric entry.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with ID matching parent path can create performance metrics.
+     * @allow (get, update, delete) User with ID matching parent path can read, update, and delete their performance metrics.
+     * @deny (create) User cannot create a performance metric under another user's profile.
+     * @deny (update, delete) User cannot modify or delete another user's performance metric.
+     * @principle Enforces document ownership and validates parent-child relationship.
      */
     match /users/{userId}/performanceMetrics/{performanceMetricId} {
-      // Helper function to check if the user is signed in and owns the resource.
-      function isSignedIn() {
-        return request.auth != null;
-      }
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Allow a user to create a performance metric entry if signed in and the userId matches.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow list: if false;
 
-      // Allow a user to get a performance metric entry if signed in and the userId matches.
-      allow get: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to list their own performance metrics.
-      allow list: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to update a performance metric entry if signed in and the userId matches and the document exists and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-
-      // Allow a user to delete a performance metric entry if signed in and the userId matches and the document exists.
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow update: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
     }
 
     /**
-     * @description Enforces user-ownership for tasks.
+     * @description Secures the /users/{userId}/tasks/{taskId} collection, ensuring only the owner can manage their tasks.
      * @path /users/{userId}/tasks/{taskId}
-     * @allow (create) Signed-in user creates a task under their profile.
-     * @allow (get, list, update, delete) Signed-in user retrieves, updates, or deletes their own task.
-     * @deny (create) Signed-in user attempts to create a task under another user's profile.
-     * @deny (get, list, update, delete) Signed-in user attempts to access another user's task.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with ID matching parent path can create tasks.
+     * @allow (get, update, delete) User with ID matching parent path can read, update, and delete their tasks.
+     * @deny (create) User cannot create a task under another user's profile.
+     * @deny (update, delete) User cannot modify or delete another user's task.
+     * @principle Enforces document ownership and validates parent-child relationship.
      */
     match /users/{userId}/tasks/{taskId} {
-      // Helper function to check if the user is signed in and owns the resource.
-      function isSignedIn() {
-        return request.auth != null;
-      }
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Allow a user to create a task if signed in and the userId matches.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow list: if false;
 
-      // Allow a user to get a task if signed in and the userId matches.
-      allow get: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to list their own tasks.
-      allow list: if isSignedIn() && isOwner(userId);
-
-      // Allow a user to update a task if signed in and the userId matches and the document exists, and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-
-      // Allow a user to delete a task if signed in and the userId matches and the document exists.
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow update: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && request.auth.uid == userId;
     }
   }
 }

@@ -24,9 +24,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/firebase';
 import {
-  initiateEmailSignUp,
-  initiateEmailSignIn,
-} from '@/firebase/non-blocking-login';
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
 import { Loader2, Sparkles } from 'lucide-react';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, serverTimestamp } from 'firebase/firestore';
@@ -82,6 +82,7 @@ export default function LoginPage() {
           description = 'O formato do email inserido não é válido.';
           break;
         default:
+          title = "Erro de Autenticação"
           description = error.message;
       }
     }
@@ -99,7 +100,7 @@ export default function LoginPage() {
 
     try {
       const { email, password, name } = values;
-      const userCredential = await initiateEmailSignUp(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       if (user) {
@@ -108,7 +109,7 @@ export default function LoginPage() {
             id: user.uid,
             name: name,
             email: user.email,
-            avatar: user.photoURL || `https://avatar.vercel.sh/${name}.png`,
+            avatar: user.photoURL || `https://avatar.vercel.sh/${name.replace(/\s/g, '')}.png`,
             createdAt: serverTimestamp(),
             motivationalPhotoUrl: '',
         };
@@ -126,7 +127,7 @@ export default function LoginPage() {
   async function onSignIn(values: z.infer<typeof signInSchema>) {
     setIsLoading(true);
     try {
-      await initiateEmailSignIn(auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       // No need to set loading to false here, the AuthGate will handle the redirect.
     } catch (error) {
       handleAuthError(error);

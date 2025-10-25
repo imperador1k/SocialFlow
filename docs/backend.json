@@ -1,29 +1,47 @@
+
 {
   "entities": {
-    "User": {
+    "UserProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
+      "title": "UserProfile",
       "type": "object",
       "description": "Represents a user of the SocialFlow application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user."
+          "description": "Unique identifier for the user, matches Firebase Auth UID."
         },
         "email": {
           "type": "string",
           "description": "User's email address.",
           "format": "email"
         },
-        "username": {
+        "name": {
           "type": "string",
-          "description": "User's username."
+          "description": "User's display name."
+        },
+        "avatar": {
+          "type": "string",
+          "description": "URL to the user's profile picture.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the user profile was created.",
+          "format": "date-time"
+        },
+        "motivationalPhotoUrl": {
+          "type": "string",
+          "description": "URL of the user's custom motivational photo.",
+          "format": "uri"
         }
       },
       "required": [
         "id",
         "email",
-        "username"
+        "name",
+        "avatar",
+        "createdAt"
       ]
     },
     "ContentIdea": {
@@ -36,10 +54,6 @@
           "type": "string",
           "description": "Unique identifier for the content idea."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N ContentIdea)"
-        },
         "contentType": {
           "type": "string",
           "description": "Type of content (Humor/Meme, Skill/Treino, Mindset/Rotina, YouTube)."
@@ -48,22 +62,28 @@
           "type": "string",
           "description": "Description of the content idea."
         },
-        "videoLinkInspiration": {
+        "videoLink": {
           "type": "string",
           "description": "Link to a video that inspires the content idea.",
           "format": "uri"
         },
-        "status": {
+        "isFavorite": {
+            "type": "boolean"
+        },
+        "isCompleted": {
+            "type": "boolean"
+        },
+        "createdAt": {
           "type": "string",
-          "description": "Status of the content idea (favorite, completed, not completed)."
+          "format": "date-time"
         }
       },
       "required": [
         "id",
-        "userId",
         "contentType",
         "description",
-        "status"
+        "isFavorite",
+        "isCompleted"
       ]
     },
     "Creator": {
@@ -76,72 +96,70 @@
           "type": "string",
           "description": "Unique identifier for the creator."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Creator)"
-        },
         "name": {
           "type": "string",
           "description": "Name of the creator."
         },
-        "photoURL": {
+        "photoUrl": {
           "type": "string",
           "description": "URL of the creator's photo.",
           "format": "uri"
         },
-        "contentCategory": {
+        "category": {
           "type": "string",
           "description": "Content category of the creator."
         },
-        "socialMediaLinks": {
-          "type": "array",
-          "description": "Links to the creator's social media profiles.",
-          "items": {
-            "type": "string"
-          }
+        "socialLink": {
+          "type": "string",
+          "description": "Link to the creator's social media profile."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "id",
-        "userId",
         "name",
-        "contentCategory"
+        "category",
+        "socialLink",
+        "photoUrl"
       ]
     },
-    "ContentPlan": {
+    "CalendarEvent": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ContentPlan",
+      "title": "CalendarEvent",
       "type": "object",
-      "description": "Represents a content plan for scheduling publications.",
+      "description": "Represents a scheduled content post.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the content plan."
+          "description": "Unique identifier for the event."
         },
-        "userId": {
+        "title": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N ContentPlan)"
+          "description": "Title of the scheduled post."
         },
-        "contentIdeaId": {
+        "date": {
           "type": "string",
-          "description": "Reference to ContentIdea. (Relationship: ContentIdea 1:N ContentPlan)"
-        },
-        "scheduledTime": {
-          "type": "string",
-          "description": "Date and time for the content to be published.",
+          "description": "The scheduled date and time for the post.",
           "format": "date-time"
         },
         "platform": {
           "type": "string",
-          "description": "Platform where the content will be published (e.g., Instagram, TikTok)."
+          "enum": ["Instagram", "TikTok", "YouTube"]
+        },
+        "contentType": {
+          "type": "string",
+          "description": "The type of content."
         }
       },
       "required": [
         "id",
-        "userId",
-        "contentIdeaId",
-        "scheduledTime",
-        "platform"
+        "title",
+        "date",
+        "platform",
+        "contentType"
       ]
     },
     "PerformanceMetric": {
@@ -154,41 +172,32 @@
           "type": "string",
           "description": "Unique identifier for the performance metric entry."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N PerformanceMetric)"
-        },
         "date": {
           "type": "string",
           "description": "The date for which the performance metrics are recorded.",
           "format": "date-time"
         },
-        "platform": {
-          "type": "string",
-          "description": "Social media platform for the metrics (e.g., Instagram, TikTok)."
-        },
         "followers": {
           "type": "number",
           "description": "Number of followers."
         },
-        "likes": {
-          "type": "number",
-          "description": "Number of likes received."
+        "engagementRate": {
+          "type": "number"
         },
-        "comments": {
-          "type": "number",
-          "description": "Number of comments received."
+        "reach": {
+          "type": "number"
         },
-        "shares": {
-          "type": "number",
-          "description": "Number of shares."
+        "impressions": {
+          "type": "number"
         }
       },
       "required": [
         "id",
-        "userId",
         "date",
-        "platform"
+        "followers",
+        "engagementRate",
+        "reach",
+        "impressions"
       ]
     },
     "Task": {
@@ -201,158 +210,68 @@
           "type": "string",
           "description": "Unique identifier for the task."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Task)"
-        },
-        "description": {
+        "text": {
           "type": "string",
           "description": "Description of the task."
         },
-        "dueDate": {
-          "type": "string",
-          "description": "Due date for the task.",
-          "format": "date-time"
+        "completed": {
+          "type": "boolean",
+          "description": "Status of the task."
         },
-        "status": {
-          "type": "string",
-          "description": "Status of the task (e.g., To Do, In Progress, Completed)."
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "id",
-        "userId",
-        "description",
-        "dueDate",
-        "status"
+        "text",
+        "completed",
+        "createdAt"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles.  Path-based ownership enforced.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
       },
-      {
-        "path": "/users/{userId}/contentIdeas/{contentIdeaId}",
-        "definition": {
-          "entityName": "ContentIdea",
-          "schema": {
-            "$ref": "#/backend/entities/ContentIdea"
-          },
-          "description": "Stores content ideas for a specific user. Path-based ownership enforced via the /users/{userId} parent.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "contentIdeaId",
-              "description": "The unique identifier of the content idea."
-            }
-          ]
-        }
+      "description": "Stores user profile information. Document ID must match the user's Firebase Auth UID."
+    },
+    "/users/{userId}/contentIdeas/{contentIdeaId}": {
+      "schema": {
+        "$ref": "#/entities/ContentIdea"
       },
-      {
-        "path": "/users/{userId}/creators/{creatorId}",
-        "definition": {
-          "entityName": "Creator",
-          "schema": {
-            "$ref": "#/backend/entities/Creator"
-          },
-          "description": "Stores creator inspiration entries for a specific user.  Path-based ownership enforced via the /users/{userId} parent.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "creatorId",
-              "description": "The unique identifier of the creator."
-            }
-          ]
-        }
+      "description": "Subcollection for a user's content ideas."
+    },
+    "/users/{userId}/creators/{creatorId}": {
+      "schema": {
+        "$ref": "#/entities/Creator"
       },
-      {
-        "path": "/users/{userId}/contentPlans/{contentPlanId}",
-        "definition": {
-          "entityName": "ContentPlan",
-          "schema": {
-            "$ref": "#/backend/entities/ContentPlan"
-          },
-          "description": "Stores content plans for a specific user. Path-based ownership enforced via the /users/{userId} parent.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "contentPlanId",
-              "description": "The unique identifier of the content plan."
-            }
-          ]
-        }
+      "description": "Subcollection for a user's list of inspirational creators."
+    },
+    "/users/{userId}/calendarEvents/{eventId}": {
+      "schema": {
+        "$ref": "#/entities/CalendarEvent"
       },
-      {
-        "path": "/users/{userId}/performanceMetrics/{performanceMetricId}",
-        "definition": {
-          "entityName": "PerformanceMetric",
-          "schema": {
-            "$ref": "#/backend/entities/PerformanceMetric"
-          },
-          "description": "Stores performance metrics for a specific user. Path-based ownership enforced via the /users/{userId} parent.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "performanceMetricId",
-              "description": "The unique identifier of the performance metric entry."
-            }
-          ]
-        }
+      "description": "Subcollection for a user's scheduled calendar events."
+    },
+    "/users/{userId}/performanceMetrics/{metricId}": {
+      "schema": {
+        "$ref": "#/entities/PerformanceMetric"
       },
-      {
-        "path": "/users/{userId}/tasks/{taskId}",
-        "definition": {
-          "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
-          "description": "Stores tasks for a specific user. Path-based ownership enforced via the /users/{userId} parent.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique identifier of the task."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). It leverages structural segregation and denormalization of authorization data.  All User-owned data is namespaced under the `/users/{userId}` collection.\n\nAuthorization Independence:\nUser ownership is enforced through path-based rules. Content Ideas, Creators, Content Plans, Performance Metrics, and Tasks are all stored as subcollections of the `/users/{userId}` collection, thereby inheriting the user's ownership. This design removes the need for `get()` calls in security rules to validate ownership.\n\nQAPs:\nSegregation of user-owned data into separate `/users/{userId}` subcollections simplifies list operations. Rules can securely filter data based on `request.auth.uid` without needing to filter based on data content.\n\nDBAC:\nAuthorization relies on `request.auth.uid` and does not require custom claims. The structure is organized around user ownership.\n\nInvariants:\nThe structure supports the integrity of ownership by enforcing path-based ownership for all user-related data. Timestamps can be added within the entities to track creation and modification times. Denormalization is not explicitly needed in this design since user ownership is enforced through path-based rules."
+      "description": "Subcollection for a user's historical performance metrics."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": {
+        "$ref": "#/entities/Task"
+      },
+      "description": "Subcollection for a user's tasks."
+    }
   }
 }
