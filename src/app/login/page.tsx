@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -29,8 +28,6 @@ import {
   initiateEmailSignIn,
 } from '@/firebase/non-blocking-login';
 import { Loader2, Sparkles } from 'lucide-react';
-import Image from 'next/image';
-import placeholderImages from '@/lib/placeholder-images.json';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
@@ -99,12 +96,6 @@ export default function LoginPage() {
       const { email, password, name } = values;
       const userCredential = await initiateEmailSignUp(auth, email, password);
       
-      // The user is automatically signed in, but we handle state via onAuthStateChanged
-      // To create the profile, we'll listen for the user object to become available.
-      // For now, this is a conceptual placeholder. A more robust solution might use
-      // a useEffect in a higher-order component that listens to the user state.
-      // But for this flow, we'll assume the user object will be available shortly after.
-      
       auth.onAuthStateChanged(user => {
         if (user && firestore) {
            const userProfileRef = doc(firestore, 'users', user.uid);
@@ -121,162 +112,153 @@ export default function LoginPage() {
     } catch (error) {
       handleAuthError(error);
     }
-    // Don't setIsLoading(false) here, the redirect will handle it
   }
 
   async function onSignIn(values: z.infer<typeof signInSchema>) {
     setIsLoading(true);
     try {
       await initiateEmailSignIn(auth, values.email, values.password);
-      // Let the AuthGate handle the redirect on successful sign-in
     } catch (error) {
       handleAuthError(error);
     }
   }
 
-
   return (
-    <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
-      <div className="relative hidden lg:flex flex-col items-center justify-between bg-zinc-900 p-8 text-white">
-        <div className="flex items-center gap-2 self-start">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-4">
             <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">SocialFlow</span>
+            <h1 className="text-3xl font-bold">SocialFlow</h1>
+          </div>
+          <p className="text-muted-foreground">
+            A plataforma tudo-em-um para gerir, analisar e otimizar as suas redes sociais.
+          </p>
         </div>
-        <div className="w-full max-w-md text-center">
-            <h1 className="text-4xl font-bold leading-tight tracking-tighter">
-                Eleve a sua presença digital.
-            </h1>
-            <p className="mt-4 text-lg text-zinc-300">
-                A plataforma tudo-em-um para gerir, analisar e otimizar as suas redes sociais.
-            </p>
-        </div>
-        <div className="absolute inset-0 overflow-hidden">
-            <Image
-                src={placeholderImages.creators[1].src}
-                alt="Mulher sorrindo, representando um criador de conteúdo de sucesso"
-                layout="fill"
-                objectFit="cover"
-                className="opacity-20"
-            />
-        </div>
-         <div className="self-start text-sm text-zinc-400">
-            © {new Date().getFullYear()} SocialFlow
-        </div>
-      </div>
-      <div className="flex items-center justify-center p-4">
-        <div className="mx-auto w-full max-w-sm">
-            <Tabs defaultValue="entrar" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="entrar">Entrar</TabsTrigger>
-                <TabsTrigger value="criar-conta">Criar Conta</TabsTrigger>
-            </TabsList>
-            <TabsContent value="entrar">
-                <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl">Bem-vindo de volta!</CardTitle>
-                    <CardDescription>
-                    Insira o seu e-mail e senha para aceder à sua conta.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...signInForm}>
-                    <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
-                        <FormField
-                        control={signInForm.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                                <Input placeholder="seu@email.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={signInForm.control}
-                        name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Senha</FormLabel>
-                            <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Entrar
-                        </Button>
-                    </form>
-                    </Form>
-                </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="criar-conta">
-                <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl">Crie a sua Conta</CardTitle>
-                    <CardDescription>
-                    É rápido e fácil. Comece a otimizar as suas redes sociais hoje mesmo.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...signUpForm}>
-                    <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
-                        <FormField
-                        control={signUpForm.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Seu nome" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={signUpForm.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                                <Input placeholder="seu@email.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={signUpForm.control}
-                        name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Senha</FormLabel>
-                            <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Criar conta
-                        </Button>
-                    </form>
-                    </Form>
-                </CardContent>
-                </Card>
-            </TabsContent>
-            </Tabs>
-        </div>
+        
+        <Tabs defaultValue="entrar" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="entrar">Entrar</TabsTrigger>
+            <TabsTrigger value="criar-conta">Criar Conta</TabsTrigger>
+          </TabsList>
+          <TabsContent value="entrar">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Bem-vindo de volta!</CardTitle>
+                <CardDescription>
+                  Insira o seu e-mail e senha para aceder à sua conta.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...signInForm}>
+                  <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
+                    <FormField
+                      control={signInForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="seu@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signInForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Entrar
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="criar-conta">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Crie a sua Conta</CardTitle>
+                <CardDescription>
+                  É rápido e fácil. Comece a otimizar as suas redes sociais hoje mesmo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...signUpForm}>
+                  <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+                    <FormField
+                      control={signUpForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Seu nome" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="seu@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Criar conta
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <p className="px-8 text-center text-sm text-muted-foreground">
+          Ao clicar em continuar, você concorda com os nossos{' '}
+          <a href="#" className="underline underline-offset-4 hover:text-primary">
+            Termos de Serviço
+          </a>{' '}
+          e{' '}
+          <a href="#" className="underline underline-offset-4 hover:text-primary">
+            Política de Privacidade
+          </a>
+          .
+        </p>
       </div>
     </div>
   );
