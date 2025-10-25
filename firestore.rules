@@ -3,33 +3,50 @@
  * @dataStructure All user data is nested under /users/{userId}, with subcollections for contentIdeas, creators, calendarEvents, performanceMetrics, and tasks.
  * @keySecurityDecisions
  *   - Users can only list content inside their own /users/{userId} node.
- * @denormalizationForAuthorization N/A - Relies on path-based authorization.
- * @structuralSegregation N/A - All user data is private.
+ *   - User profile documents (/users/{userId}) require that the document ID matches the authenticated user's UID upon creation.
+ *   - Listing of user documents (/users) is disallowed.
+ * @denormalizationForAuthorization N/A - Relies on path-based authorization and ID matching.
+ * @structuralSegregation N/A - All user data is private and namespaced under their respective user ID.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
+     * @description Checks if the user is signed in.
+     */
+    function isSignedIn() {
+        return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner and the resource exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
      * @description Controls access to user profile documents.
      * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) User with matching UID can create their profile.
+     * @allow (create) User with matching UID can create their profile, enforcing that the document id matches their auth UID.
      * @deny (create) User attempts to create a profile with a mismatched UID.
      * @allow (get) User with matching UID can read their profile.
      * @deny (get) User attempts to read a different user's profile.
-     * @allow (update) User with matching UID can update their profile.
+     * @allow (update) User with matching UID can update their profile, only if the id doesn't change.
      * @deny (update) User attempts to update a different user's profile.
      * @allow (delete) User with matching UID can delete their profile.
      * @deny (delete) User attempts to delete a different user's profile.
-     * @principle Enforces document ownership for all operations.
+     * @principle Enforces document ownership for all operations, and relational integrity on create and update.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow get: if isOwner(userId);
       allow list: if false;
@@ -51,12 +68,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
      */
     match /users/{userId}/contentIdeas/{contentIdeaId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
       allow create: if isOwner(userId);
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
@@ -78,12 +89,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
      */
     match /users/{userId}/creators/{creatorId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
       allow create: if isOwner(userId);
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
@@ -105,12 +110,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
      */
     match /users/{userId}/calendarEvents/{eventId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
       allow create: if isOwner(userId);
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
@@ -132,12 +131,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
      */
     match /users/{userId}/performanceMetrics/{metricId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
       allow create: if isOwner(userId);
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
@@ -159,12 +152,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes, allows owner-only reads, restricts listing to the owner.
      */
     match /users/{userId}/tasks/{taskId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
       allow create: if isOwner(userId);
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);

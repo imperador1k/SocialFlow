@@ -348,5 +348,3 @@ function ProfileSettings() {
     </div>
   )
 }
-
-    
