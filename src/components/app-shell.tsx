@@ -19,7 +19,10 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import placeholderImages from '@/lib/placeholder-images.json';
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +36,18 @@ const navItems = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { user, firestore } = useFirebase();
+  const userProfileDoc = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileDoc);
+
+  const userAvatar = userProfile?.avatar || user?.photoURL;
+  const userName = userProfile?.name || user?.displayName || 'Utilizador';
+  const userEmail = userProfile?.email || user?.email || 'sem-email';
+  const avatarFallback = userName?.charAt(0).toUpperCase() || 'U';
+
 
   const mobileNav = (
     <nav className="grid gap-2 text-lg font-medium mt-6">
@@ -103,12 +118,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div className='p-4 border-b'>
                         <div className="flex items-center gap-3">
                             <Avatar className="h-12 w-12">
-                                <AvatarImage src={placeholderImages.creators[4].src} alt="Avatar do Utilizador" />
-                                <AvatarFallback>V</AvatarFallback>
+                                <AvatarImage src={userAvatar} alt="Avatar do Utilizador" />
+                                <AvatarFallback>{avatarFallback}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-medium text-lg">Valter</p>
-                                <p className="text-sm text-muted-foreground">valter@email.com</p>
+                                <p className="font-medium text-lg">{userName}</p>
+                                <p className="text-sm text-muted-foreground">{userEmail}</p>
                             </div>
                         </div>
                     </div>

@@ -28,8 +28,8 @@ import {
   initiateEmailSignIn,
 } from '@/firebase/non-blocking-login';
 import { Loader2, Sparkles } from 'lucide-react';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { toast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
@@ -92,22 +92,31 @@ export default function LoginPage() {
 
   async function onSignUp(values: z.infer<typeof signUpSchema>) {
     setIsLoading(true);
+    if (!firestore || !auth) {
+        handleAuthError(new Error("Firebase services not available."));
+        return;
+    }
+
     try {
       const { email, password, name } = values;
       const userCredential = await initiateEmailSignUp(auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
+        const userProfileRef = doc(firestore, 'users', user.uid);
+        const userProfile = {
+            id: user.uid,
+            name: name,
+            email: user.email,
+            avatar: user.photoURL || `https://avatar.vercel.sh/${name}.png`,
+            createdAt: serverTimestamp(),
+            motivationalPhotoUrl: '',
+        };
+        // Use setDocumentNonBlocking to create the user profile with the correct ID
+        setDocumentNonBlocking(userProfileRef, userProfile, { merge: false });
+      }
       
-      auth.onAuthStateChanged(user => {
-        if (user && firestore) {
-           const userProfileRef = doc(firestore, 'users', user.uid);
-           addDocumentNonBlocking(collection(firestore, 'users'), {
-                id: user.uid,
-                name: name,
-                email: user.email,
-                avatar: user.photoURL || `https://avatar.vercel.sh/${name}.png`,
-                createdAt: serverTimestamp(),
-           });
-        }
-      });
+      // No need to set loading to false here, the AuthGate will handle the redirect.
 
     } catch (error) {
       handleAuthError(error);
@@ -118,6 +127,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await initiateEmailSignIn(auth, values.email, values.password);
+      // No need to set loading to false here, the AuthGate will handle the redirect.
     } catch (error) {
       handleAuthError(error);
     }
