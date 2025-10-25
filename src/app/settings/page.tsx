@@ -33,19 +33,19 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Manage your account settings and preferences.</p>
       </div>
-      <div className="grid lg:grid-cols-5 gap-8 items-start">
-        <nav className="lg:col-span-1 flex lg:flex-col gap-1">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <nav className="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:col-span-1">
           {settingsNav.map((item) => (
             <Button
               key={item.name}
               variant="ghost"
               onClick={() => setActiveTab(item.name)}
               className={cn(
-                'justify-start w-full',
+                'justify-start w-full whitespace-nowrap',
                 activeTab === item.name && 'bg-muted text-foreground font-semibold'
               )}
             >
-              <item.icon className="mr-2" />
+              <item.icon className="mr-2 h-4 w-4" />
               {item.name}
             </Button>
           ))}
@@ -99,7 +99,7 @@ function ProfileSettings() {
                 </CardHeader>
                 <CardContent>
                     <Button variant="destructive">
-                        <LogOut className="mr-2" />
+                        <LogOut className="mr-2 h-4 w-4" />
                         Log out
                     </Button>
                 </CardContent>
