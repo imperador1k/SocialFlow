@@ -28,10 +28,9 @@ import {
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { Loader2, Sparkles } from 'lucide-react';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 
 
@@ -50,6 +49,7 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -103,21 +103,30 @@ export default function LoginPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // After creating the user, create the user profile in Firestore
       if (user) {
-        const userProfileRef = doc(firestore, 'users', user.uid);
-        const userProfile = {
-            id: user.uid,
-            name: name,
-            email: user.email,
-            avatar: user.photoURL || `https://avatar.vercel.sh/${name.replace(/\s/g, '')}.png`,
-            createdAt: serverTimestamp(),
-            motivationalPhotoUrl: '',
-        };
-        // Use setDocumentNonBlocking to create the user profile with the correct ID
-        setDocumentNonBlocking(userProfileRef, userProfile, { merge: false });
+        try {
+          const userProfileRef = doc(firestore, 'users', user.uid);
+          const userProfile = {
+              id: user.uid,
+              name: name,
+              email: user.email,
+              avatar: user.photoURL || `https://avatar.vercel.sh/${name.replace(/\s/g, '')}.png`,
+              createdAt: serverTimestamp(),
+              motivationalPhotoUrl: '',
+          };
+          // Use setDoc to create a document with a specific ID (the user's UID)
+          await setDoc(userProfileRef, userProfile);
+        } catch (firestoreError) {
+          // Handle potential errors during profile creation
+          handleAuthError(firestoreError);
+          // Optional: You might want to delete the created user if profile creation fails
+          return;
+        }
       }
       
-      // No need to set loading to false here, the AuthGate will handle the redirect.
+      // On success, the onAuthStateChanged listener in FirebaseProvider will handle the redirect.
+      // We don't need to manually set loading to false if a redirect is expected.
 
     } catch (error) {
       handleAuthError(error);
@@ -126,9 +135,13 @@ export default function LoginPage() {
 
   async function onSignIn(values: z.infer<typeof signInSchema>) {
     setIsLoading(true);
+    if (!auth) {
+        handleAuthError(new Error("Firebase auth service not available."));
+        return;
+    }
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // No need to set loading to false here, the AuthGate will handle the redirect.
+      // On success, the onAuthStateChanged listener will handle the app state change/redirect.
     } catch (error) {
       handleAuthError(error);
     }
