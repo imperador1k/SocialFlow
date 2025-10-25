@@ -58,39 +58,40 @@ function centerAspectCrop(
     )
   }
 
-  function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
+  async function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    
-    // Ensure crop dimensions are defined
-    const cropX = crop.x * scaleX;
-    const cropY = crop.y * scaleY;
-    const cropWidth = crop.width * scaleX;
-    const cropHeight = crop.height * scaleY;
-
-    if (cropWidth === 0 || cropHeight === 0) {
-        return Promise.reject(new Error('Crop dimensions cannot be zero.'));
+  
+    // Ensure crop dimensions are defined and valid
+    if (!crop.width || !crop.height) {
+      return Promise.reject(new Error('Crop dimensions cannot be zero.'));
     }
-
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
+  
+    canvas.width = crop.width;
+    canvas.height = crop.height;
     const ctx = canvas.getContext('2d');
-
+  
     if (!ctx) {
-        return Promise.reject(new Error('Failed to get 2D context from canvas.'));
+      return Promise.reject(new Error('Failed to get 2D context from canvas.'));
     }
+  
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvas.width = crop.width * pixelRatio;
+    canvas.height = crop.height * pixelRatio;
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
   
     ctx.drawImage(
       image,
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
       0,
       0,
-      cropWidth,
-      cropHeight
+      crop.width,
+      crop.height
     );
   
     return new Promise((resolve) => {
@@ -150,6 +151,7 @@ function ProfileSettings() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setCrop(undefined); // Reset crop state
       const reader = new FileReader();
       reader.onloadend = () => {
         setImgSrc(reader.result as string);
