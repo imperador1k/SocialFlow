@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -32,6 +32,7 @@ import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
+import { useRouter } from 'next/navigation';
 
 
 const signUpSchema = z.object({
@@ -50,6 +51,17 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
+  const router = useRouter();
+
+
+  // If the user is already logged in, redirect them to the dashboard.
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
+
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -62,6 +74,7 @@ export default function LoginPage() {
   });
 
   const handleAuthError = (error: unknown) => {
+    setIsLoading(false); // Ensure loading is stopped on error
     let title = 'Ocorreu um erro';
     let description = 'Por favor, tente novamente mais tarde.';
 
@@ -88,7 +101,6 @@ export default function LoginPage() {
     }
     
     toast({ variant: 'destructive', title, description });
-    setIsLoading(false);
   }
 
   async function onSignUp(values: z.infer<typeof signUpSchema>) {
@@ -105,7 +117,6 @@ export default function LoginPage() {
 
       // After creating the user, create the user profile in Firestore
       if (user) {
-        try {
           const userProfileRef = doc(firestore, 'users', user.uid);
           const userProfile = {
               id: user.uid,
@@ -117,20 +128,14 @@ export default function LoginPage() {
           };
           // Use setDoc to create a document with a specific ID (the user's UID)
           await setDoc(userProfileRef, userProfile);
-        } catch (firestoreError) {
-          // Handle potential errors during profile creation
-          handleAuthError(firestoreError);
-          // Optional: You might want to delete the created user if profile creation fails
-          return;
-        }
       }
-      
-      // On success, the onAuthStateChanged listener in FirebaseProvider will handle the redirect.
-      // We don't need to manually set loading to false if a redirect is expected.
-
+      // On success, the onAuthStateChanged listener in AuthGate will handle the redirect.
+      // No need to set isLoading to false here if a redirect is expected.
     } catch (error) {
       handleAuthError(error);
     }
+    // We don't set loading to false on purpose on success, 
+    // because the page will redirect.
   }
 
   async function onSignIn(values: z.infer<typeof signInSchema>) {
@@ -141,11 +146,23 @@ export default function LoginPage() {
     }
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // On success, the onAuthStateChanged listener will handle the app state change/redirect.
+      // On success, the onAuthStateChanged listener in AuthGate will handle the redirect.
+      // We don't set loading to false on purpose on success, 
+      // because the page will redirect.
     } catch (error) {
       handleAuthError(error);
     }
   }
+
+  // Don't render the form if the user is already logged in and we are just waiting for the redirect.
+  if (user) {
+    return (
+        <div className="flex min-h-screen w-full items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
