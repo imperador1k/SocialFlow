@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 const mainNavItems = [
@@ -44,17 +44,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const mobileNav = (
-    <nav className="grid gap-2 text-lg font-medium">
-      <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
-        <Sparkles className="h-6 w-6 text-primary glow-icon" />
-        <span className="font-bold">SocialFlow</span>
-      </Link>
+    <nav className="grid gap-2 text-lg font-medium mt-6">
       {allNavItems.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
           className={cn(
-            'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
+            'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground transition-colors',
             pathname === href && 'bg-muted text-foreground'
           )}
         >
@@ -78,8 +74,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={href}
               href={href}
               className={cn(
-                'transition-colors text-muted-foreground hover:text-foreground',
-                pathname === href && 'text-foreground font-medium'
+                'transition-colors text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md',
+                pathname === href && 'text-foreground font-medium bg-muted'
               )}
             >
               {label}
@@ -90,9 +86,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Button
                 variant="ghost"
                 className={cn(
-                  'flex items-center gap-1 text-muted-foreground hover:text-foreground',
+                  'flex items-center gap-1 text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md',
                   moreNavItems.some((item) => item.href === pathname) &&
-                    'text-foreground font-medium'
+                    'text-foreground font-medium bg-muted'
                 )}
               >
                 More
@@ -116,6 +112,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
+             <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
+             <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+                <Sparkles className="h-6 w-6 text-primary glow-icon" />
+                <span className="font-bold">SocialFlow</span>
+              </Link>
             {mobileNav}
           </SheetContent>
         </Sheet>
