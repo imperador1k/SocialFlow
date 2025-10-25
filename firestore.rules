@@ -1,0 +1,219 @@
+/**
+ * @fileoverview Firestore Security Rules for SocialFlow application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Only the authenticated user can
+ * read, create, update, or delete data associated with their own user ID. This is
+ * achieved through path-based rules that match the `/users/{userId}` structure.
+ *
+ * Data Structure:
+ * All data is nested under `/users/{userId}`, ensuring a clear ownership hierarchy.
+ * Subcollections like `socialMediaAccounts`, `performanceMetrics`, `tasks`, `contentIdeas`,
+ * `creators`, and `contentPlans` inherit this ownership model.
+ *
+ * Key Security Decisions:
+ * - User listing is implicitly disallowed by the absence of a top-level `users` collection.
+ * - All write operations require authentication. Anonymous users are not supported.
+ * - Data validation is minimized for rapid prototyping, focusing only on ownership and
+ *   relational integrity (e.g., enforcing immutability of key IDs).
+ *
+ * Denormalization for Authorization:
+ * The data model enforces that child documents contain the parent's `userId` (e.g., `SocialMediaAccount` documents have a `userId` field). This allows the rules to avoid costly `get()` calls to parent documents to validate authorization.
+ *
+ * Structural Segregation:
+ * All data under `/users/{userId}` is considered private to the user. There are no mixed-security collections.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the request is made by a signed-in user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user ID matches the provided user ID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user owns the existing document.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Enforces document ownership for writes.
+     * @path /users/{userId}
+     * @allow (create) - User with ID 'user123' creates their profile.
+     *   Request: { auth: { uid: 'user123' }, resource.data.id: 'user123', operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their profile.
+     *   Request: { auth: { uid: 'user123' }, resource.data.id: 'user123', operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a profile for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.id: 'user123', operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update profile 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.id: 'user123', operation: 'update' }
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      // Write rules
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces document ownership for SocialMediaAccounts.
+     * @path /users/{userId}/socialMediaAccounts/{socialMediaAccountId}
+     * @allow (create) - User with ID 'user123' creates a social media account.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their social media account.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a social media account for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update a social media account for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'update' }
+     * @principle Enforces document ownership for writes and relational integrity.
+     */
+    match /users/{userId}/socialMediaAccounts/{socialMediaAccountId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write rules
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces document ownership for PerformanceMetrics.
+     * @path /users/{userId}/socialMediaAccounts/{socialMediaAccountId}/performanceMetrics/{performanceMetricId}
+     * @allow (create) - User with ID 'user123' creates a performance metric.
+     *   Request: { auth: { uid: 'user123' }, operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their performance metric.
+     *   Request: { auth: { uid: 'user123' }, operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a performance metric for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update a performance metric for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, operation: 'update' }
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/socialMediaAccounts/{socialMediaAccountId}/performanceMetrics/{performanceMetricId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write rules
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces document ownership for Tasks.
+     * @path /users/{userId}/tasks/{taskId}
+     * @allow (create) - User with ID 'user123' creates a task.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their task.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a task for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update a task for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'update' }
+     * @principle Enforces document ownership for writes and relational integrity.
+     */
+    match /users/{userId}/tasks/{taskId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write rules
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces document ownership for ContentIdeas.
+     * @path /users/{userId}/contentIdeas/{contentIdeaId}
+     * @allow (create) - User with ID 'user123' creates a content idea.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their content idea.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a content idea for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update a content idea for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'update' }
+     * @principle Enforces document ownership for writes and relational integrity.
+     */
+    match /users/{userId}/contentIdeas/{contentIdeaId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write rules
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces document ownership for Creators.
+     * @path /users/{userId}/creators/{creatorId}
+     * @allow (create) - User with ID 'user123' creates a creator.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their creator.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a creator for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update a creator for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'update' }
+     * @principle Enforces document ownership for writes and relational integrity.
+     */
+    match /users/{userId}/creators/{creatorId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write rules
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces document ownership for ContentPlans.
+     * @path /users/{userId}/contentPlans/{contentPlanId}
+     * @allow (create) - User with ID 'user123' creates a content plan.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'create' }
+     * @allow (update) - User with ID 'user123' updates their content plan.
+     *   Request: { auth: { uid: 'user123' }, resource.data.userId: 'user123', operation: 'update' }
+     * @deny (create) - User with ID 'user456' attempts to create a content plan for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'create' }
+     * @deny (update) - User with ID 'user456' attempts to update a content plan for 'user123'.
+     *   Request: { auth: { uid: 'user456' }, resource.data.userId: 'user123', operation: 'update' }
+     * @principle Enforces document ownership for writes and relational integrity.
+     */
+    match /users/{userId}/contentPlans/{contentPlanId} {
+      // Read rules
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write rules
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

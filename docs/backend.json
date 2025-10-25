@@ -1,0 +1,421 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile within the SocialFlow application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user profile."
+        },
+        "userName": {
+          "type": "string",
+          "description": "The user's username."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "profilePicture": {
+          "type": "string",
+          "description": "URL or path to the user's profile picture."
+        }
+      },
+      "required": [
+        "id",
+        "userName",
+        "email"
+      ]
+    },
+    "SocialMediaAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SocialMediaAccount",
+      "type": "object",
+      "description": "Represents a user's connected social media account.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the social media account."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N SocialMediaAccount)"
+        },
+        "platform": {
+          "type": "string",
+          "description": "The name of the social media platform (e.g., Instagram, Twitter, Facebook)."
+        },
+        "accountHandle": {
+          "type": "string",
+          "description": "The user's account handle on the platform."
+        },
+        "engagementRate": {
+          "type": "number",
+          "description": "The last updated engagement rate for the social media account."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "platform",
+        "accountHandle"
+      ]
+    },
+    "PerformanceMetric": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PerformanceMetric",
+      "type": "object",
+      "description": "Represents a performance metric for a social media account.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the performance metric."
+        },
+        "socialMediaAccountId": {
+          "type": "string",
+          "description": "Reference to SocialMediaAccount. (Relationship: SocialMediaAccount 1:N PerformanceMetric)"
+        },
+        "date": {
+          "type": "string",
+          "description": "The date the metric was recorded.",
+          "format": "date-time"
+        },
+        "followers": {
+          "type": "number",
+          "description": "Number of followers."
+        },
+        "likes": {
+          "type": "number",
+          "description": "Number of likes received."
+        },
+        "comments": {
+          "type": "number",
+          "description": "Number of comments received."
+        },
+        "shares": {
+          "type": "number",
+          "description": "Number of shares received."
+        }
+      },
+      "required": [
+        "id",
+        "socialMediaAccountId",
+        "date"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task related to social media activities.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Task)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the task."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date the task is due.",
+          "format": "date-time"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Indicates whether the task is completed."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "title",
+        "dueDate"
+      ]
+    },
+    "ContentIdea": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ContentIdea",
+      "type": "object",
+      "description": "Represents a content idea for social media.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the content idea."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ContentIdea)"
+        },
+        "contentType": {
+          "type": "string",
+          "description": "The type of content (e.g., Humor/Meme, Skill/Treino, Mindset/Rotina, YouTube)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the content idea."
+        },
+        "inspirationLink": {
+          "type": "string",
+          "description": "Link to a video or resource that inspired the content idea.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the content idea (e.g., favorite, completed, not completed)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "contentType",
+        "description"
+      ]
+    },
+    "Creator": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Creator",
+      "type": "object",
+      "description": "Represents a creator for inspiration.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the creator."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Creator)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the creator."
+        },
+        "photo": {
+          "type": "string",
+          "description": "URL or path to the creator's photo."
+        },
+        "contentCategory": {
+          "type": "string",
+          "description": "The content category the creator specializes in."
+        },
+        "socialMediaLinks": {
+          "type": "array",
+          "description": "Array of the creator's social media links.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "contentCategory"
+      ]
+    },
+    "ContentPlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ContentPlan",
+      "type": "object",
+      "description": "Represents a content plan for scheduling content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the content plan."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ContentPlan)"
+        },
+        "socialMediaAccountId": {
+          "type": "string",
+          "description": "Reference to SocialMediaAccount. (Relationship: SocialMediaAccount 1:N ContentPlan)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the content plan."
+        },
+        "scheduledDate": {
+          "type": "string",
+          "description": "The date and time the content is scheduled to be published.",
+          "format": "date-time"
+        },
+        "contentIdeaId": {
+          "type": "string",
+          "description": "Reference to ContentIdea. (Relationship: ContentIdea 1:N ContentPlan)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "socialMediaAccountId",
+        "title",
+        "scheduledDate",
+        "contentIdeaId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profiles. Path-based ownership ensures only the authenticated user can access their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/socialMediaAccounts/{socialMediaAccountId}",
+        "definition": {
+          "entityName": "SocialMediaAccount",
+          "schema": {
+            "$ref": "#/backend/entities/SocialMediaAccount"
+          },
+          "description": "Stores social media accounts for each user. Path-based ownership inherited from the parent user document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "socialMediaAccountId",
+              "description": "The unique identifier of the social media account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/socialMediaAccounts/{socialMediaAccountId}/performanceMetrics/{performanceMetricId}",
+        "definition": {
+          "entityName": "PerformanceMetric",
+          "schema": {
+            "$ref": "#/backend/entities/PerformanceMetric"
+          },
+          "description": "Stores performance metrics for a given social media account. Path-based ownership inherited from the parent social media account document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "socialMediaAccountId",
+              "description": "The unique identifier of the social media account."
+            },
+            {
+              "name": "performanceMetricId",
+              "description": "The unique identifier of the performance metric."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks for each user. Path-based ownership ensures only the authenticated user can access their own tasks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/contentIdeas/{contentIdeaId}",
+        "definition": {
+          "entityName": "ContentIdea",
+          "schema": {
+            "$ref": "#/backend/entities/ContentIdea"
+          },
+          "description": "Stores content ideas for each user. Path-based ownership ensures only the authenticated user can access their own content ideas.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "contentIdeaId",
+              "description": "The unique identifier of the content idea."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/creators/{creatorId}",
+        "definition": {
+          "entityName": "Creator",
+          "schema": {
+            "$ref": "#/backend/entities/Creator"
+          },
+          "description": "Stores creators for inspiration for each user. Path-based ownership ensures only the authenticated user can access their own creators.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "creatorId",
+              "description": "The unique identifier of the creator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/contentPlans/{contentPlanId}",
+        "definition": {
+          "entityName": "ContentPlan",
+          "schema": {
+            "$ref": "#/backend/entities/ContentPlan"
+          },
+          "description": "Stores content plans for each user. Path-based ownership ensures only the authenticated user can access their own content plans.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "contentPlanId",
+              "description": "The unique identifier of the content plan."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). User-owned data is stored under `/users/{userId}`. This eliminates the need for `get()` calls in security rules, enhancing atomicity and debuggability. Each collection is designed with Structural Segregation (Homogeneous Security Posture) in mind, so collections are not used to store documents that need different security rules.\n\n*   **User Profiles:** User profiles are stored in `/users/{userId}` to take advantage of path-based ownership. \n*   **Social Media Accounts:** Social media accounts are stored in `/users/{userId}/socialMediaAccounts/{socialMediaAccountId}`. This continues the hierarchical path structure for user-owned data. The `engagementRate` should also live in this document.\n*   **Performance Metrics:** Performance metrics are stored under `/users/{userId}/socialMediaAccounts/{socialMediaAccountId}/performanceMetrics/{performanceMetricId}`. This follows the hierarchical structure of User -> Social Media Account -> Performance Metric.\n*   **Tasks, Content Ideas, Creators, Content Plans:** These are stored under `/users/{userId}`. They are all owned by a user.\n\nThis structure supports QAPs by enabling secure list operations. Rules can simply check if `request.auth.uid == userId` when listing items under `/users/{userId}`. The authorization is clear and explicit, based solely on the path."
+  }
+}
