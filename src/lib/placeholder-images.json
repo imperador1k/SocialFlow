@@ -1,3 +1,50 @@
 {
-  "placeholderImages": []
+  "creators": [
+    {
+      "id": 1,
+      "src": "https://picsum.photos/seed/creator1/200/200",
+      "hint": "portrait person"
+    },
+    {
+      "id": 2,
+      "src": "https://picsum.photos/seed/creator2/200/200",
+      "hint": "person smiling"
+    },
+    {
+      "id": 3,
+      "src": "https://picsum.photos/seed/creator3/200/200",
+      "hint": "woman portrait"
+    },
+    {
+      "id": 4,
+      "src": "https://picsum.photos/seed/creator4/200/200",
+      "hint": "man portrait"
+    },
+    {
+      "id": 5,
+      "src": "https://picsum.photos/seed/creator5/200/200",
+      "hint": "person thinking"
+    }
+  ],
+  "inspirational_quote_fallback": {
+    "src": "https://picsum.photos/seed/quote/1200/800",
+    "hint": "inspirational landscape"
+  },
+  "idea_inspiration": [
+    {
+      "id": 1,
+      "src": "https://picsum.photos/seed/idea1/300/200",
+      "hint": "abstract motion"
+    },
+    {
+      "id": 2,
+      "src": "https://picsum.photos/seed/idea2/300/200",
+      "hint": "technology background"
+    },
+    {
+      "id": 3,
+      "src": "https://picsum.photos/seed/idea3/300/200",
+      "hint": "creative setup"
+    }
+  ]
 }
