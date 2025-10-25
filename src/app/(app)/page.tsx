@@ -18,7 +18,7 @@ import { doc, collection, orderBy, query, limit, DocumentReference, DocumentData
 import type { PerformanceMetric, UserProfile } from '@/lib/types';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
-import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop, PixelCrop } from 'react-image-crop';
 import {
   Dialog,
   DialogContent,
@@ -50,49 +50,38 @@ function centerAspectCrop(
     )
   }
 
-async function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
+  async function getCroppedImg(
+    image: HTMLImageElement,
+    crop: PixelCrop,
+  ): Promise<string> {
     const canvas = document.createElement('canvas');
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext('2d');
+  
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+  
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-
-    const cropX = crop.x * scaleX;
-    const cropY = crop.y * scaleY;
-    const cropWidth = crop.width * scaleX;
-    const cropHeight = crop.height * scaleY;
-
-    if (cropWidth === 0 || cropHeight === 0) {
-      return Promise.reject(new Error('Crop dimensions cannot be zero.'));
-    }
-
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      return Promise.reject(new Error('Failed to get 2D context from canvas.'));
-    }
-
+  
     ctx.drawImage(
       image,
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
       0,
       0,
-      cropWidth,
-      cropHeight
+      crop.width,
+      crop.height
     );
   
-    return new Promise((resolve, reject) => {
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        if (!dataUrl) {
-            reject(new Error('Could not get data URL from canvas.'));
-            return;
-        }
-        resolve(dataUrl);
+    return new Promise((resolve) => {
+        resolve(canvas.toDataURL('image/jpeg'));
     });
-}
+  }
 
 
 function InspirationalQuoteCard() {
@@ -111,6 +100,7 @@ function InspirationalQuoteCard() {
     const imgRef = useRef<HTMLImageElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [crop, setCrop] = useState<Crop>();
+    const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [isCropModalOpen, setCropModalOpen] = useState(false);
 
     const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -133,13 +123,13 @@ function InspirationalQuoteCard() {
     };
 
     const handleCropComplete = async () => {
-        if (!imgRef.current || !crop?.width || !crop?.height || !userProfileDoc || !user) return;
+        if (!imgRef.current || !completedCrop?.width || !completedCrop?.height || !userProfileDoc || !user) return;
         
         setIsSaving(true);
         setCropModalOpen(false);
     
         try {
-            const croppedImageBase64 = await getCroppedImg(imgRef.current, crop);
+            const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
             const storage = getStorage();
             const photoRef = storageRef(storage, `users/${user.uid}/motivational-photo.jpg`);
             
@@ -210,7 +200,8 @@ function InspirationalQuoteCard() {
                 <div className='flex justify-center'>
                 <ReactCrop
                     crop={crop}
-                    onChange={c => setCrop(c)}
+                    onChange={(_, percentCrop) => setCrop(percentCrop)}
+                    onComplete={(c) => setCompletedCrop(c)}
                     aspect={16/9}
                     className='max-h-[70vh]'
                 >
@@ -222,7 +213,7 @@ function InspirationalQuoteCard() {
                 <DialogClose asChild>
                     <Button variant="outline" disabled={isSaving}>Cancelar</Button>
                 </DialogClose>
-                <Button onClick={handleCropComplete} disabled={isSaving || !crop?.width || !crop?.height}>
+                <Button onClick={handleCropComplete} disabled={isSaving || !completedCrop?.width || !completedCrop?.height}>
                     {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2"/>}
                     Cortar e Guardar
                 </Button>
