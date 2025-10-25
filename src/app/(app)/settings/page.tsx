@@ -58,6 +58,46 @@ function centerAspectCrop(
     )
   }
 
+  function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    // Ensure crop dimensions are defined
+    const cropX = crop.x * scaleX;
+    const cropY = crop.y * scaleY;
+    const cropWidth = crop.width * scaleX;
+    const cropHeight = crop.height * scaleY;
+
+    if (cropWidth === 0 || cropHeight === 0) {
+        return Promise.reject(new Error('Crop dimensions cannot be zero.'));
+    }
+
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return Promise.reject(new Error('Failed to get 2D context from canvas.'));
+    }
+  
+    ctx.drawImage(
+      image,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      cropWidth,
+      cropHeight
+    );
+  
+    return new Promise((resolve) => {
+      resolve(canvas.toDataURL('image/jpeg'));
+    });
+}
+
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
@@ -85,14 +125,19 @@ function ProfileSettings() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
   
   const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState('');
+  const [avatar, setAvatar] = useState(''); // This will hold the URL or the base64 data URI of the new avatar
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imgSrc, setImgSrc] = useState('');
+  const [imgSrc, setImgSrc] = useState(''); // Source for the cropping modal
   const [crop, setCrop] = useState<Crop>();
   const [isCropModalOpen, setCropModalOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const originalName = userProfile?.name || user?.displayName || '';
+  const originalAvatar = userProfile?.avatar || user?.photoURL || '';
+
+  const hasChanges = name !== originalName || avatar !== originalAvatar;
 
   useEffect(() => {
     if (userProfile) {
@@ -111,6 +156,8 @@ function ProfileSettings() {
         setCropModalOpen(true);
       };
       reader.readAsDataURL(file);
+      // Clear input value to allow re-selecting the same file
+      event.target.value = '';
     }
   };
   
@@ -126,38 +173,31 @@ function ProfileSettings() {
   const handleSaveChanges = async () => {
     if (!userProfileDoc || !user) return;
     setIsSaving(true);
-    let finalAvatarUrl = userProfile?.avatar;
+    
+    try {
+        let finalAvatarUrl = originalAvatar;
 
-    // Only upload if a new avatar has been set via cropping (it will be a data URI)
-    if (avatar.startsWith('data:image')) {
-        const storage = getStorage();
-        const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-        try {
+        // If 'avatar' state is a data URI, it means a new image was cropped and needs uploading.
+        if (avatar.startsWith('data:image')) {
+            const storage = getStorage();
+            const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
             await uploadString(avatarRef, avatar, 'data_url');
             finalAvatarUrl = await getDownloadURL(avatarRef);
-        } catch(e) {
-            console.error("Error uploading avatar: ", e);
-            toast({
-                variant: 'destructive',
-                title: "Erro no Upload",
-                description: "Não foi possível carregar a sua nova foto de perfil.",
-              });
-            setIsSaving(false);
-            return;
         }
-    }
 
-    try {
         const updatedProfile = {
-          name: name,
-          avatar: finalAvatarUrl
+            name: name,
+            avatar: finalAvatarUrl
         };
 
         await updateDoc(userProfileDoc, updatedProfile);
         
+        // After saving, update local state to match the new 'original' values
+        setAvatar(finalAvatarUrl);
+
         toast({
-          title: "Perfil Atualizado",
-          description: "As suas alterações foram guardadas com sucesso.",
+            title: "Perfil Atualizado",
+            description: "As suas alterações foram guardadas com sucesso.",
         });
     } catch(e) {
         console.error("Error saving profile: ", e);
@@ -171,32 +211,18 @@ function ProfileSettings() {
     }
   }
 
-  const handleCropComplete = () => {
+  const handleCropComplete = async () => {
     if (imgRef.current && crop?.width && crop?.height) {
-        const canvas = document.createElement('canvas');
-        const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
-        const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
-        const pixelRatio = 1; // You can increase this for higher res, but 1 is usually fine
-        canvas.width = crop.width * pixelRatio;
-        canvas.height = crop.height * pixelRatio;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-            ctx.imageSmoothingQuality = 'high';
-
-            ctx.drawImage(
-                imgRef.current,
-                crop.x * scaleX,
-                crop.y * scaleY,
-                crop.width * scaleX,
-                crop.height * scaleY,
-                0,
-                0,
-                crop.width,
-                crop.height
-            );
-            const base64Image = canvas.toDataURL('image/jpeg');
-            setAvatar(base64Image);
+        try {
+            const croppedImageBase64 = await getCroppedImg(imgRef.current, crop);
+            setAvatar(croppedImageBase64); // Update avatar state with the new base64 image
+        } catch (e) {
+            console.error("Error cropping image:", e);
+            toast({
+                variant: 'destructive',
+                title: "Erro ao Cortar",
+                description: "Não foi possível processar a imagem.",
+            });
         }
     }
     setCropModalOpen(false);
@@ -214,13 +240,24 @@ function ProfileSettings() {
     // The layout's effect will handle the redirect.
   };
 
+  const currentName = name || originalName;
+  const currentAvatar = avatar || originalAvatar;
+
 
   if (isProfileLoading) {
-    return <p>A carregar perfil...</p>;
+    return <Card>
+        <CardHeader>
+            <CardTitle>Perfil</CardTitle>
+            <CardDescription>É assim que os outros o verão no site.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex items-center justify-center p-10">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        </CardContent>
+    </Card>;
   }
 
-  const currentAvatar = avatar || userProfile?.avatar || user?.photoURL;
-  const currentName = name || userProfile?.name || user?.displayName;
 
   return (
     <div className="space-y-8">
@@ -238,7 +275,7 @@ function ProfileSettings() {
             <div className="flex flex-col gap-2">
               <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
               <Button onClick={() => fileInputRef.current?.click()}>Mudar Foto</Button>
-              <p className="text-xs text-muted-foreground">JPG, GIF ou PNG. 1MB no máximo.</p>
+              <p className="text-xs text-muted-foreground">JPG ou PNG. 1MB no máximo.</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -251,7 +288,7 @@ function ProfileSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSaveChanges} disabled={isSaving}>
+          <Button onClick={handleSaveChanges} disabled={isSaving || !hasChanges}>
             {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Guardar Alterações
             </Button>
@@ -292,7 +329,7 @@ function ProfileSettings() {
             <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleCropComplete}>Cortar e Guardar</Button>
+            <Button onClick={handleCropComplete}>Cortar e Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

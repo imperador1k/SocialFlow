@@ -50,6 +50,47 @@ function centerAspectCrop(
     )
   }
 
+function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    // Ensure crop dimensions are defined
+    const cropX = crop.x * scaleX;
+    const cropY = crop.y * scaleY;
+    const cropWidth = crop.width * scaleX;
+    const cropHeight = crop.height * scaleY;
+
+    if (cropWidth === 0 || cropHeight === 0) {
+        return Promise.reject(new Error('Crop dimensions cannot be zero.'));
+    }
+
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return Promise.reject(new Error('Failed to get 2D context from canvas.'));
+    }
+  
+    ctx.drawImage(
+      image,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      cropWidth,
+      cropHeight
+    );
+  
+    return new Promise((resolve) => {
+      resolve(canvas.toDataURL('image/jpeg'));
+    });
+}
+
+
 function InspirationalQuoteCard() {
     const { user, firestore } = useFirebase();
     const { toast } = useToast();
@@ -59,7 +100,7 @@ function InspirationalQuoteCard() {
         return doc(firestore, 'users', user.uid) as DocumentReference<UserProfile>;
       }, [user, firestore]);
     
-      const { data: userProfile } = useDoc<UserProfile>(userProfileDoc);
+      const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
 
     const [isSaving, setIsSaving] = useState(false);
     const [imgSrc, setImgSrc] = useState('');
@@ -82,47 +123,27 @@ function InspirationalQuoteCard() {
           )
           reader.readAsDataURL(event.target.files[0])
           setCropModalOpen(true);
+          // Clear the input value to allow re-selecting the same file
+          event.target.value = '';
         }
     };
 
     const handleCropComplete = async () => {
         if (!imgRef.current || !crop?.width || !crop?.height || !userProfileDoc || !user) return;
+        
         setIsSaving(true);
         setCropModalOpen(false);
-
-        const canvas = document.createElement('canvas');
-        const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
-        const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
-        canvas.width = crop.width * scaleX;
-        canvas.height = crop.height * scaleY;
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-            setIsSaving(false);
-            return;
-        }
-
-        ctx.drawImage(
-            imgRef.current,
-            crop.x * scaleX,
-            crop.y * scaleY,
-            crop.width * scaleX,
-            crop.height * scaleY,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-        const base64Image = canvas.toDataURL('image/jpeg');
-
-        const storage = getStorage();
-        const photoRef = storageRef(storage, `users/${user.uid}/motivational-photo.jpg`);
-
+    
         try {
-            await uploadString(photoRef, base64Image, 'data_url');
+            const croppedImageBase64 = await getCroppedImg(imgRef.current, crop);
+            const storage = getStorage();
+            const photoRef = storageRef(storage, `users/${user.uid}/motivational-photo.jpg`);
+            
+            await uploadString(photoRef, croppedImageBase64, 'data_url');
             const downloadURL = await getDownloadURL(photoRef);
+            
             await updateDoc(userProfileDoc, { motivationalPhotoUrl: downloadURL });
+
             toast({
                 title: "Foto Atualizada!",
                 description: "A sua nova foto de motivação foi guardada.",
@@ -147,14 +168,16 @@ function InspirationalQuoteCard() {
         <Card className="col-span-full relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg group min-h-[300px]">
              <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
             <div className="relative w-full md:w-1/2 h-64 md:h-auto min-h-[300px]">
-                <Image
-                    src={motivationalPhoto}
-                    alt="Imagem motivacional"
-                    fill
-                    className="object-cover"
-                    data-ai-hint={hint}
-                    priority
-                />
+                {isProfileLoading ? <Loader2 className="absolute inset-0 m-auto h-8 w-8 animate-spin" /> : 
+                    <Image
+                        src={motivationalPhoto}
+                        alt="Imagem motivacional"
+                        fill
+                        className="object-cover"
+                        data-ai-hint={hint}
+                        priority
+                    />
+                }
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent md:bg-gradient-to-r"></div>
             </div>
             <div className="relative flex flex-col justify-center p-8 md:p-12 md:w-1/2">
