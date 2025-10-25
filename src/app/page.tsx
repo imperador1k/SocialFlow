@@ -19,13 +19,13 @@ async function InspirationalQuoteCard() {
     } catch (error) {
         console.error("Failed to generate inspirational quote:", error);
         quoteData = {
-            quote: "Mais vale morrer de pé do que viver uma vida ajoelhado.",
+            quote: "The secret of getting ahead is getting started.",
             imageUrl: placeholderImages.inspirational_quote_fallback.src,
         };
     }
 
     return (
-        <Card className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 relative overflow-hidden flex flex-col md:flex-row shadow-lg shadow-primary/10">
+        <Card className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg">
             <div className="relative w-full md:w-1/2 h-64 md:h-auto min-h-[300px]">
                 <Image
                     src={quoteData.imageUrl}
@@ -35,10 +35,10 @@ async function InspirationalQuoteCard() {
                     data-ai-hint={placeholderImages.inspirational_quote_fallback.hint}
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:bg-gradient-to-r"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent md:bg-gradient-to-r"></div>
             </div>
             <div className="relative flex flex-col justify-center p-8 md:p-12 md:w-1/2">
-                <blockquote className="text-2xl lg:text-3xl font-semibold text-white z-10">
+                <blockquote className="text-2xl lg:text-3xl font-semibold text-white z-10 leading-snug">
                     "{quoteData.quote}"
                 </blockquote>
             </div>
@@ -48,7 +48,7 @@ async function InspirationalQuoteCard() {
 
 export default function DashboardPage() {
     return (
-        <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <InspirationalQuoteCard />
 
             <Card>
