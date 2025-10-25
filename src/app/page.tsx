@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Activity, Upload, Users } from "lucide-react";
+import { Activity, Upload, Users, Lightbulb, Loader2 } from "lucide-react";
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';
 import {
@@ -11,38 +11,50 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { DashboardCharts } from "@/components/dashboard-charts";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc, collection, orderBy, query, limit } from 'firebase/firestore';
+import type { PerformanceMetric, UserProfile } from '@/lib/types';
+import { generateInspirationalQuote } from "@/ai/flows/generate-inspirational-quote";
 
 function InspirationalQuoteCard() {
-    const [imageUrl, setImageUrl] = useState(placeholderImages.inspirational_quote_fallback.src);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [quoteData, setQuoteData] = useState<{ quote: string; imageUrl: string } | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImageUrl(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    useEffect(() => {
+        const fetchQuote = async () => {
+            setIsLoading(true);
+            try {
+                const result = await generateInspirationalQuote({});
+                setQuoteData(result);
+            } catch (error) {
+                console.error("Failed to generate inspirational quote:", error);
+                setQuoteData({
+                    quote: "Mais vale morrer de pé do que viver uma vida ajoelhado",
+                    imageUrl: placeholderImages.inspirational_quote_fallback.src,
+                });
+            }
+            setIsLoading(false);
+        };
+        fetchQuote();
+    }, []);
 
-    const handleButtonClick = () => {
-        fileInputRef.current?.click();
-    };
 
-    const quoteData = {
-        quote: "Mais vale morrer de pé do que viver uma vida ajoelhado",
-    };
+    if (isLoading) {
+        return (
+            <Card className="col-span-full relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg group min-h-[300px] justify-center items-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="ml-4 text-muted-foreground">A gerar uma citação inspiradora...</p>
+            </Card>
+        );
+    }
 
     return (
         <Card className="col-span-full relative overflow-hidden flex flex-col md:flex-row bg-card shadow-lg group">
             <div className="relative w-full md:w-1/2 h-64 md:h-auto min-h-[300px]">
                 <Image
-                    src={imageUrl}
+                    src={quoteData?.imageUrl || placeholderImages.inspirational_quote_fallback.src}
                     alt="Inspirational image"
                     fill
                     className="object-cover"
@@ -50,25 +62,10 @@ function InspirationalQuoteCard() {
                     priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent md:bg-gradient-to-r"></div>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    className="hidden"
-                    accept="image/*"
-                />
-                <Button 
-                    onClick={handleButtonClick}
-                    variant="secondary"
-                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                    <Upload className="mr-2" />
-                    Alterar Imagem
-                </Button>
             </div>
             <div className="relative flex flex-col justify-center p-8 md:p-12 md:w-1/2">
                 <blockquote className="text-2xl lg:text-3xl font-semibold text-white z-10 leading-snug">
-                    "{quoteData.quote}"
+                    "{quoteData?.quote}"
                 </blockquote>
             </div>
         </Card>
@@ -76,6 +73,18 @@ function InspirationalQuoteCard() {
 }
 
 export default function DashboardPage() {
+    const { user, firestore } = useFirebase();
+
+    const latestMetricsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        const metricsCollection = collection(firestore, `users/${user.uid}/performanceMetrics`);
+        return query(metricsCollection, orderBy('date', 'desc'), limit(1));
+    }, [user, firestore]);
+    
+    const { data: latestMetricsData, isLoading: metricsLoading } = useDoc<PerformanceMetric>(latestMetricsQuery ? latestMetricsQuery.docs[0] : null);
+
+    const latestMetrics = latestMetricsData;
+    
     return (
         <div className="space-y-6">
             <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
@@ -87,8 +96,12 @@ export default function DashboardPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">45,231</div>
-                        <p className="text-xs text-muted-foreground">+20.1% do mês passado</p>
+                        {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                            <>
+                                <div className="text-2xl font-bold">{latestMetrics?.followers.toLocaleString() || 'N/A'}</div>
+                                <p className="text-xs text-muted-foreground">Dados mais recentes</p>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -98,8 +111,12 @@ export default function DashboardPage() {
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">5.2%</div>
-                        <p className="text-xs text-muted-foreground">+0.5% do mês passado</p>
+                         {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                            <>
+                                <div className="text-2xl font-bold">{latestMetrics?.engagementRate.toFixed(1) || 'N/A'}%</div>
+                                <p className="text-xs text-muted-foreground">Dados mais recentes</p>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
                 

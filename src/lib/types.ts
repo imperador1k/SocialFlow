@@ -42,3 +42,12 @@ export interface UserProfile {
   email: string;
   avatar: string;
 }
+
+export interface PerformanceMetric {
+  id: string;
+  date: Timestamp;
+  followers: number;
+  engagementRate: number;
+  reach: number;
+  impressions: number;
+}

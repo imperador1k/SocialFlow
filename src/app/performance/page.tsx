@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -19,42 +19,65 @@ import {
     ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { PerformanceMetric } from '@/lib/types';
+import { format } from 'date-fns';
 
 const initialMetrics = {
-    followers: 45231,
-    engagementRate: 5.2,
-    reach: 120543,
-    impressions: 250123,
+    followers: 0,
+    engagementRate: 0,
+    reach: 0,
+    impressions: 0,
 };
 
-const chartData = [
-  { date: 'Wk 1', value: 1200 },
-  { date: 'Wk 2', value: 1800 },
-  { date: 'Wk 3', value: 1500 },
-  { date: 'Wk 4', value: 2200 },
-  { date: 'Wk 5', value: 2500 },
-  { date: 'Wk 6', value: 3200 },
-];
 const chartConfig = {
-  value: { label: 'Alcance', color: 'hsl(var(--chart-1))' },
+  reach: { label: 'Alcance', color: 'hsl(var(--chart-1))' },
 };
 
 
 export default function PerformancePage() {
-  const [metrics, setMetrics] = useState(initialMetrics);
+  const { user, firestore } = useFirebase();
+  const [currentMetrics, setCurrentMetrics] = useState(initialMetrics);
   const [summary, setSummary] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
+  const metricsCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/performanceMetrics`);
+  }, [user, firestore]);
+
+  const metricsQuery = useMemoFirebase(() => {
+    if (!metricsCollection) return null;
+    return query(metricsCollection, orderBy('date', 'asc'));
+  }, [metricsCollection]);
+
+  const { data: historicalMetrics = [], isLoading: metricsLoading } = useCollection<PerformanceMetric>(metricsQuery);
+
+  useEffect(() => {
+    if (historicalMetrics && historicalMetrics.length > 0) {
+      const latest = historicalMetrics[historicalMetrics.length - 1];
+      setCurrentMetrics({
+        followers: latest.followers,
+        engagementRate: latest.engagementRate,
+        reach: latest.reach,
+        impressions: latest.impressions,
+      });
+    }
+  }, [historicalMetrics]);
+
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setMetrics((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    setCurrentMetrics((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
   };
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setSummary('');
-    const metricsString = `Seguidores: ${metrics.followers}, Taxa de Engajamento: ${metrics.engagementRate}%, Alcance: ${metrics.reach}, Impressões: ${metrics.impressions}`;
+    const metricsString = `Seguidores: ${currentMetrics.followers}, Taxa de Engajamento: ${currentMetrics.engagementRate}%, Alcance: ${currentMetrics.reach}, Impressões: ${currentMetrics.impressions}`;
     try {
       const result = await summarizePerformanceAnalysis({ metrics: metricsString });
       setSummary(result.summary);
@@ -68,6 +91,29 @@ export default function PerformancePage() {
     }
     setIsAnalyzing(false);
   };
+
+  const handleSaveMetrics = () => {
+    if (!metricsCollection) return;
+
+    const newMetric = {
+        ...currentMetrics,
+        date: serverTimestamp(),
+    };
+
+    addDocumentNonBlocking(metricsCollection, newMetric);
+
+    toast({
+        title: "Métricas Salvas!",
+        description: "Suas novas métricas de performance foram salvas com sucesso.",
+    });
+
+    handleAnalyze();
+  };
+
+  const chartData = (historicalMetrics || []).map(metric => ({
+    date: format((metric.date as Timestamp).toDate(), 'dd/MM'),
+    reach: metric.reach,
+  }));
 
   return (
     <div className="space-y-6">
@@ -85,7 +131,7 @@ export default function PerformancePage() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{metrics.followers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{currentMetrics.followers.toLocaleString()}</div>
                 </CardContent>
             </Card>
             <Card>
@@ -94,7 +140,7 @@ export default function PerformancePage() {
                     <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{metrics.engagementRate.toFixed(1)}%</div>
+                    <div className="text-2xl font-bold">{currentMetrics.engagementRate.toFixed(1)}%</div>
                 </CardContent>
             </Card>
             <Card>
@@ -103,7 +149,7 @@ export default function PerformancePage() {
                     <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{metrics.reach.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{currentMetrics.reach.toLocaleString()}</div>
                 </CardContent>
             </Card>
             <Card>
@@ -112,7 +158,7 @@ export default function PerformancePage() {
                     <BarChart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{metrics.impressions.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{currentMetrics.impressions.toLocaleString()}</div>
                 </CardContent>
             </Card>
         </div>
@@ -126,23 +172,23 @@ export default function PerformancePage() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="followers">Seguidores</Label>
-                        <Input id="followers" name="followers" type="number" value={metrics.followers} onChange={handleInputChange} />
+                        <Input id="followers" name="followers" type="number" value={currentMetrics.followers} onChange={handleInputChange} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="engagementRate">Taxa de Engajamento (%)</Label>
-                        <Input id="engagementRate" name="engagementRate" type="number" step="0.1" value={metrics.engagementRate} onChange={handleInputChange} />
+                        <Input id="engagementRate" name="engagementRate" type="number" step="0.1" value={currentMetrics.engagementRate} onChange={handleInputChange} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="reach">Alcance</Label>
-                        <Input id="reach" name="reach" type="number" value={metrics.reach} onChange={handleInputChange} />
+                        <Input id="reach" name="reach" type="number" value={currentMetrics.reach} onChange={handleInputChange} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="impressions">Impressões</Label>
-                        <Input id="impressions" name="impressions" type="number" value={metrics.impressions} onChange={handleInputChange} />
+                        <Input id="impressions" name="impressions" type="number" value={currentMetrics.impressions} onChange={handleInputChange} />
                     </div>
-                    <Button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full">
+                    <Button onClick={handleSaveMetrics} disabled={isAnalyzing || !user} className="w-full">
                         {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Analisar Performance
+                        Salvar e Analisar
                     </Button>
                 </CardContent>
             </Card>
@@ -160,11 +206,11 @@ export default function PerformancePage() {
                             </div>
                         )}
                         {summary && !isAnalyzing && (
-                             <p className="text-sm text-muted-foreground">{summary}</p>
+                             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{summary}</p>
                         )}
                          {!summary && !isAnalyzing && (
                              <div className="text-center py-8 text-muted-foreground">
-                                <p>Clique em "Analisar Performance" para gerar um resumo.</p>
+                                <p>Clique em "Salvar e Analisar" para gerar um resumo.</p>
                             </div>
                         )}
                     </CardContent>
@@ -173,24 +219,26 @@ export default function PerformancePage() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Alcance ao Longo do Tempo</CardTitle>
-                        <CardDescription>Mostra o alcance semanal da audiência.</CardDescription>
+                        <CardDescription>Mostra o alcance da audiência ao longo do tempo.</CardDescription>
                     </CardHeader>
                     <CardContent>
+                        {metricsLoading ? <div className="h-[200px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin"/></div> :
                          <ChartContainer config={chartConfig} className="h-[200px] w-full">
                              <AreaChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12, top: 10 }}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} stroke="hsl(var(--muted-foreground))" />
-                                <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => `${Number(value) / 1000}k`} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => typeof value === 'number' ? `${value / 1000}k` : ''} />
                                 <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                 <defs>
-                                    <linearGradient id="fillValue" x1="0" y1="0" x2="0" y2="1">
+                                    <linearGradient id="fillReach" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8} />
                                     <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
                                     </linearGradient>
                                 </defs>
-                                <Area dataKey="value" type="natural" fill="url(#fillValue)" stroke="hsl(var(--chart-1))" stackId="a" />
+                                <Area dataKey="reach" type="natural" fill="url(#fillReach)" stroke="hsl(var(--chart-1))" stackId="a" />
                             </AreaChart>
                          </ChartContainer>
+                        }
                     </CardContent>
                  </Card>
             </div>

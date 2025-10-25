@@ -13,18 +13,14 @@ import {
     ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts"
-
-const chartData = [
-    { month: "Janeiro", engagement: 186, followers: 800 },
-    { month: "Fevereiro", engagement: 305, followers: 950 },
-    { month: "Março", engagement: 237, followers: 1100 },
-    { month: "Abril", engagement: 273, followers: 1300 },
-    { month: "Maio", engagement: 209, followers: 1550 },
-    { month: "Junho", engagement: 214, followers: 1700 },
-]
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import type { PerformanceMetric } from '@/lib/types';
+import { format } from 'date-fns';
+import { Loader2 } from "lucide-react";
 
 const chartConfig = {
-    engagement: {
+    engagementRate: {
         label: "Engajamento",
         color: "hsl(var(--chart-1))",
     },
@@ -35,12 +31,49 @@ const chartConfig = {
 }
 
 export function DashboardCharts() {
+    const { user, firestore } = useFirebase();
+
+    const metricsCollection = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, `users/${user.uid}/performanceMetrics`);
+    }, [user, firestore]);
+
+    const metricsQuery = useMemoFirebase(() => {
+        if (!metricsCollection) return null;
+        // Fetch last 6 entries for the charts
+        return query(metricsCollection, orderBy('date', 'desc'), );
+    }, [metricsCollection]);
+
+    const { data: metrics = [], isLoading } = useCollection<PerformanceMetric>(metricsQuery);
+
+    const chartData = (metrics || [])
+        .map(metric => ({
+            month: format((metric.date as Timestamp).toDate(), 'MMM'),
+            engagement: metric.engagementRate, // Changed to engagementRate
+            followers: metric.followers,
+        }))
+        .slice(0, 6)
+        .reverse();
+
+    if (isLoading) {
+        return (
+            <>
+                <Card className="md:col-span-2 flex justify-center items-center min-h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </Card>
+                 <Card className="md:col-span-2 flex justify-center items-center min-h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </Card>
+            </>
+        )
+    }
+
     return (
         <>
             <Card className="md:col-span-2">
                 <CardHeader>
                     <CardTitle>Engajamento de Conteúdo</CardTitle>
-                    <CardDescription>Janeiro - Junho 2024</CardDescription>
+                    <CardDescription>Últimos meses</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="h-[200px] w-full">
@@ -54,9 +87,9 @@ export function DashboardCharts() {
                                 stroke="hsl(var(--muted-foreground))"
                                 tickFormatter={(value) => value.slice(0, 3)}
                             />
-                            <YAxis stroke="hsl(var(--muted-foreground))" />
+                            <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => `${value}%`} />
                             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                            <Bar dataKey="engagement" fill="var(--color-engagement)" radius={4} />
+                            <Bar dataKey="engagement" fill="var(--color-engagementRate)" radius={4} />
                         </BarChart>
                     </ChartContainer>
                 </CardContent>
@@ -64,7 +97,7 @@ export function DashboardCharts() {
              <Card className="md:col-span-2">
                 <CardHeader>
                     <CardTitle>Crescimento de Seguidores</CardTitle>
-                    <CardDescription>Tendência de crescimento semanal.</CardDescription>
+                    <CardDescription>Tendência de crescimento.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="h-[200px] w-full">
@@ -82,7 +115,7 @@ export function DashboardCharts() {
                                 stroke="hsl(var(--muted-foreground))"
                                 tickFormatter={(value) => value.slice(0, 3)}
                             />
-                             <YAxis stroke="hsl(var(--muted-foreground))" domain={['dataMin - 100', 'dataMax + 100']} />
+                             <YAxis stroke="hsl(var(--muted-foreground))" domain={['dataMin - 100', 'dataMax + 100']} tickFormatter={(value) => typeof value === 'number' ? `${value / 1000}k` : ''}/>
                             <ChartTooltip
                                 cursor={false}
                                 content={<ChartTooltipContent hideLabel />}
