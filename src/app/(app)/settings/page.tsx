@@ -141,53 +141,6 @@ function ProfileSettings() {
     }
   }, [userProfile, user]);
 
-  useEffect(() => {
-    if (!newAvatarCropped || !user || !userProfileDoc) return;
-  
-    const saveChanges = async () => {
-      setIsSaving(true);
-      try {
-        const profileUpdates: Partial<UserProfile> = {};
-  
-        if (newAvatarCropped.startsWith('data:image')) {
-          const storage = getStorage();
-          const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-          await uploadString(avatarRef, newAvatarCropped, 'data_url');
-          const finalAvatarUrl = await getDownloadURL(avatarRef);
-          profileUpdates.avatar = finalAvatarUrl;
-          setDisplayAvatar(finalAvatarUrl); 
-        }
-  
-        if (name !== originalName) {
-          profileUpdates.name = name;
-        }
-  
-        if (Object.keys(profileUpdates).length > 0) {
-          await updateDoc(userProfileDoc, profileUpdates);
-        }
-  
-        setNewAvatarCropped(null); // Reset cropped image state
-  
-        toast({
-          title: "Perfil Atualizado",
-          description: "As suas alterações foram guardadas com sucesso.",
-        });
-      } catch (e) {
-        console.error("Error saving profile: ", e);
-        toast({
-          variant: 'destructive',
-          title: "Erro ao Guardar",
-          description: "Não foi possível guardar as alterações no seu perfil.",
-        });
-      } finally {
-        setIsSaving(false);
-      }
-    };
-  
-    saveChanges();
-  }, [newAvatarCropped, name, originalName, user, userProfileDoc, toast]);
-
-
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -212,32 +165,48 @@ function ProfileSettings() {
   }
 
   const handleTriggerSave = async () => {
-    // This function now only triggers the useEffect by setting the cropped image
-    // or by initiating a save if only the name changed.
+    if (!user || !userProfileDoc) return;
     if (!hasChanges) return;
-  
-    if (imgSrc && completedCrop) {
-      // If there's a crop to be done, do it. This will trigger the useEffect.
-      handleCropComplete();
-    } else if (name !== originalName) {
-      // If only the name changed, we can directly update.
-      setIsSaving(true);
-      try {
-        await updateDoc(userProfileDoc!, { name });
+
+    setIsSaving(true);
+    try {
+        const profileUpdates: Partial<UserProfile> = {};
+
+        // Upload new avatar if one was cropped
+        if (newAvatarCropped && newAvatarCropped.startsWith('data:image')) {
+            const storage = getStorage();
+            const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
+            await uploadString(avatarRef, newAvatarCropped, 'data_url');
+            const finalAvatarUrl = await getDownloadURL(avatarRef);
+            profileUpdates.avatar = finalAvatarUrl;
+            setDisplayAvatar(finalAvatarUrl); 
+        }
+
+        // Add name to updates if it was changed
+        if (name !== originalName) {
+            profileUpdates.name = name;
+        }
+
+        // Perform the update if there's anything to update
+        if (Object.keys(profileUpdates).length > 0) {
+            await updateDoc(userProfileDoc, profileUpdates);
+        }
+
+        setNewAvatarCropped(null); // Reset cropped image state
+
         toast({
-          title: "Nome Atualizado",
-          description: "O seu nome foi guardado com sucesso.",
+            title: "Perfil Atualizado",
+            description: "As suas alterações foram guardadas com sucesso.",
         });
-      } catch (e) {
-        console.error("Error saving name: ", e);
+    } catch (e) {
+        console.error("Error saving profile: ", e);
         toast({
-          variant: 'destructive',
-          title: "Erro ao Guardar",
-          description: "Não foi possível guardar o seu nome.",
+            variant: 'destructive',
+            title: "Erro ao Guardar",
+            description: "Não foi possível guardar as alterações no seu perfil.",
         });
-      } finally {
+    } finally {
         setIsSaving(false);
-      }
     }
   };
 
@@ -245,7 +214,7 @@ function ProfileSettings() {
     if (imgRef.current && completedCrop?.width && completedCrop?.height) {
         try {
             const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
-            setNewAvatarCropped(croppedImageBase64); // This will trigger the useEffect
+            setNewAvatarCropped(croppedImageBase64); 
             setDisplayAvatar(croppedImageBase64); // Show preview immediately
         } catch (e) {
             console.error("Error cropping image:", e);
@@ -365,7 +334,3 @@ function ProfileSettings() {
     </div>
   )
 }
-
-    
-
-    
