@@ -41,6 +41,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar: string;
+  motivationalPhotoUrl?: string;
 }
 
 export interface PerformanceMetric {
