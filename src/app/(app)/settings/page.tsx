@@ -58,44 +58,47 @@ function centerAspectCrop(
     )
   }
 
-  async function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
+async function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<string> {
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-  
-    // Ensure crop dimensions are defined and valid
-    if (!crop.width || !crop.height) {
+
+    const cropX = crop.x * scaleX;
+    const cropY = crop.y * scaleY;
+    const cropWidth = crop.width * scaleX;
+    const cropHeight = crop.height * scaleY;
+
+    if (cropWidth === 0 || cropHeight === 0) {
       return Promise.reject(new Error('Crop dimensions cannot be zero.'));
     }
-  
-    canvas.width = crop.width;
-    canvas.height = crop.height;
+
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
     const ctx = canvas.getContext('2d');
-  
+
     if (!ctx) {
       return Promise.reject(new Error('Failed to get 2D context from canvas.'));
     }
-  
-    const pixelRatio = window.devicePixelRatio || 1;
-    canvas.width = crop.width * pixelRatio;
-    canvas.height = crop.height * pixelRatio;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    ctx.imageSmoothingQuality = 'high';
-  
+
     ctx.drawImage(
       image,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
       0,
       0,
-      crop.width,
-      crop.height
+      cropWidth,
+      cropHeight
     );
   
-    return new Promise((resolve) => {
-      resolve(canvas.toDataURL('image/jpeg'));
+    return new Promise((resolve, reject) => {
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        if (!dataUrl) {
+            reject(new Error('Could not get data URL from canvas.'));
+            return;
+        }
+        resolve(dataUrl);
     });
 }
 
@@ -126,7 +129,7 @@ function ProfileSettings() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
   
   const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState(''); // This will hold the URL or the base64 data URI of the new avatar
+  const [newAvatar, setNewAvatar] = useState(''); // This will hold the base64 data URI of the new cropped avatar
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imgSrc, setImgSrc] = useState(''); // Source for the cropping modal
@@ -137,13 +140,15 @@ function ProfileSettings() {
   
   const originalName = userProfile?.name || user?.displayName || '';
   const originalAvatar = userProfile?.avatar || user?.photoURL || '';
-
-  const hasChanges = name !== originalName || avatar !== originalAvatar;
+  
+  // The avatar displayed should be the newly cropped one (if it exists) or the original one.
+  const displayAvatar = newAvatar || originalAvatar;
+  
+  const hasChanges = name !== originalName || newAvatar !== '';
 
   useEffect(() => {
     if (userProfile) {
       setName(userProfile.name || user?.displayName || '');
-      setAvatar(userProfile.avatar || user?.photoURL || '');
     }
   }, [userProfile, user]);
 
@@ -178,24 +183,27 @@ function ProfileSettings() {
     
     try {
         let finalAvatarUrl = originalAvatar;
+        const profileUpdates: Partial<UserProfile> = {};
 
-        // If 'avatar' state is a data URI, it means a new image was cropped and needs uploading.
-        if (avatar.startsWith('data:image')) {
+        // If a new avatar was cropped, upload it.
+        if (newAvatar.startsWith('data:image')) {
             const storage = getStorage();
             const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-            await uploadString(avatarRef, avatar, 'data_url');
+            await uploadString(avatarRef, newAvatar, 'data_url');
             finalAvatarUrl = await getDownloadURL(avatarRef);
+            profileUpdates.avatar = finalAvatarUrl;
         }
 
-        const updatedProfile = {
-            name: name,
-            avatar: finalAvatarUrl
-        };
+        if (name !== originalName) {
+            profileUpdates.name = name;
+        }
 
-        await updateDoc(userProfileDoc, updatedProfile);
+        if (Object.keys(profileUpdates).length > 0) {
+            await updateDoc(userProfileDoc, profileUpdates);
+        }
         
-        // After saving, update local state to match the new 'original' values
-        setAvatar(finalAvatarUrl);
+        // Reset the new avatar state after saving
+        setNewAvatar('');
 
         toast({
             title: "Perfil Atualizado",
@@ -217,7 +225,7 @@ function ProfileSettings() {
     if (imgRef.current && crop?.width && crop?.height) {
         try {
             const croppedImageBase64 = await getCroppedImg(imgRef.current, crop);
-            setAvatar(croppedImageBase64); // Update avatar state with the new base64 image
+            setNewAvatar(croppedImageBase64); // Update avatar state with the new base64 image
         } catch (e) {
             console.error("Error cropping image:", e);
             toast({
@@ -243,8 +251,6 @@ function ProfileSettings() {
   };
 
   const currentName = name || originalName;
-  const currentAvatar = avatar || originalAvatar;
-
 
   if (isProfileLoading) {
     return <Card>
@@ -271,7 +277,7 @@ function ProfileSettings() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={currentAvatar} alt={currentName} />
+              <AvatarImage src={displayAvatar} alt={currentName} />
               <AvatarFallback>{currentName?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
@@ -331,10 +337,12 @@ function ProfileSettings() {
             <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleCropComplete}>Cortar e Confirmar</Button>
+            <Button onClick={handleCropComplete} disabled={!crop?.width || !crop?.height}>Cortar e Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+
+    

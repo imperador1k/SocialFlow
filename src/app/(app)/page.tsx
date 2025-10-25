@@ -54,40 +54,43 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<strin
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-  
-    // Ensure crop dimensions are defined and valid
-    if (!crop.width || !crop.height) {
+
+    const cropX = crop.x * scaleX;
+    const cropY = crop.y * scaleY;
+    const cropWidth = crop.width * scaleX;
+    const cropHeight = crop.height * scaleY;
+
+    if (cropWidth === 0 || cropHeight === 0) {
       return Promise.reject(new Error('Crop dimensions cannot be zero.'));
     }
-  
-    canvas.width = crop.width;
-    canvas.height = crop.height;
+
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
     const ctx = canvas.getContext('2d');
-  
+
     if (!ctx) {
       return Promise.reject(new Error('Failed to get 2D context from canvas.'));
     }
-  
-    const pixelRatio = window.devicePixelRatio || 1;
-    canvas.width = crop.width * pixelRatio;
-    canvas.height = crop.height * pixelRatio;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    ctx.imageSmoothingQuality = 'high';
-  
+
     ctx.drawImage(
       image,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
       0,
       0,
-      crop.width,
-      crop.height
+      cropWidth,
+      cropHeight
     );
   
-    return new Promise((resolve) => {
-      resolve(canvas.toDataURL('image/jpeg'));
+    return new Promise((resolve, reject) => {
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        if (!dataUrl) {
+            reject(new Error('Could not get data URL from canvas.'));
+            return;
+        }
+        resolve(dataUrl);
     });
 }
 
@@ -219,7 +222,7 @@ function InspirationalQuoteCard() {
                 <DialogClose asChild>
                     <Button variant="outline" disabled={isSaving}>Cancelar</Button>
                 </DialogClose>
-                <Button onClick={handleCropComplete} disabled={isSaving}>
+                <Button onClick={handleCropComplete} disabled={isSaving || !crop?.width || !crop?.height}>
                     {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2"/>}
                     Cortar e Guardar
                 </Button>
@@ -309,3 +312,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
