@@ -30,11 +30,12 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
-import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirebase, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import type { UserProfile } from '@/lib/types';
+import { signOut } from 'firebase/auth';
 
 
 function centerAspectCrop(
@@ -74,6 +75,7 @@ export default function SettingsPage() {
 function ProfileSettings() {
   const { toast } = useToast();
   const { user, firestore } = useFirebase();
+  const auth = useAuth();
 
   const userProfileDoc = useMemoFirebase(() => {
     if (!user) return null;
@@ -189,6 +191,19 @@ function ProfileSettings() {
     }
     setCropModalOpen(false);
   };
+  
+  const handleSignOut = () => {
+    signOut(auth).catch((error) => {
+      console.error('Error signing out: ', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Terminar Sessão',
+        description: 'Não foi possível terminar a sessão. Por favor, tente novamente.',
+      });
+    });
+    // No need to redirect, AuthGate will handle it.
+  };
+
 
   if (isProfileLoading) {
     return <p>A carregar perfil...</p>;
@@ -236,7 +251,7 @@ function ProfileSettings() {
           <CardDescription>Termine a sessão da sua conta neste dispositivo.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive">
+          <Button variant="destructive" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Terminar sessão
           </Button>
