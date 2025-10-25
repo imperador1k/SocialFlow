@@ -64,7 +64,7 @@ export default function InspirationPage() {
         deleteDocumentNonBlocking(creatorDoc);
     }
 
-    const filteredCreators = creators.filter(creator => filter === 'All' || creator.category === filter);
+    const filteredCreators = (creators || []).filter(creator => filter === 'All' || creator.category === filter);
 
     return (
         <div className="space-y-6">
