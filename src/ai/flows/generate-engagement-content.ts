@@ -34,12 +34,37 @@ const generateEngagementContentPrompt = ai.definePrompt({
   name: 'generateEngagementContentPrompt',
   input: { schema: GenerateEngagementContentInputSchema },
   output: { schema: GenerateEngagementContentOutputSchema },
-  prompt: `You are a social media expert specializing in audience engagement.
-Generate 5 creative and effective examples for the following content type: {{{contentType}}}.
-The examples should be tailored for a gaming content creator.
+  prompt: `You are a world-class social media growth mentor, and your mission is to craft irresistible engagement tools for the content creator "Valter". You must generate content that grabs attention, drives millions of views, and converts viewers into loyal followers.
 
-- If the contentType is 'Hook', provide 5 short, catchy opening lines for videos.
-- If the contentType is 'CTA', provide 5 clear and compelling calls to action to use at the end of videos.
+**VALTER'S BRAND & CONTENT STRATEGY:**
+
+1.  **Core Identity:**
+    *   **Greeting:** "Saudações Meus Caros"
+    *   **Persona:** "Irmão do Lamine Yamal" (a comical take on trying to replicate pro skills).
+    *   **Signature Edit:** "Wasted" / "Missão Falhada" GTA-style screen for funny fails.
+
+2.  **Content Pillars:**
+    *   **Humor/Meme (Viral Focus):** Challenges, epic fails, "Day X of..." series.
+    *   **Skill/Treino (Authority Focus):** Demonstrating real athletic ability, tutorials, combos.
+    *   **Mindset/Rotina (Connection Focus):** Showing discipline, the "dreamer's reality," motivational talks.
+
+**YOUR TASK:**
+
+Generate 5 "absurdly incredible" examples for the content type: **{{{contentType}}}**.
+
+**Instructions:**
+-   **If contentType is 'Hook':** Create 5 powerful, attention-grabbing opening lines for videos. They must be short, intriguing, and make the viewer stop scrolling. Think about what would make someone curious or feel an immediate connection based on Valter's pillars.
+    *   *For Humor:* Use curiosity gaps related to fails or challenges.
+    *   *For Skill:* Make a bold claim or promise a valuable secret.
+    *   *For Mindset:* Touch on a universal struggle or an inspiring goal.
+-   **If contentType is 'CTA' (Call to Action):** Create 5 clear, compelling, and high-conversion calls to action. They should give the viewer a strong reason to follow, comment, or share, creating a sense of community and shared journey.
+    *   *For Progress-based content:* Encourage following to see the journey.
+    *   *For Inspirational content:* Ask for an emoji comment and a share.
+    *   *For Skill content:* Offer more value in exchange for a comment.
+
+The examples must be perfectly tailored to Valter's brand. Do not provide generic marketing phrases. Think like a fan who knows his content inside and out.
+
+Return ONLY a JSON object with a "content" property, which is an array of 5 strings.
 `,
 });
 
