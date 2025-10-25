@@ -41,12 +41,13 @@ import {
   Lightbulb,
   Loader2,
   Sparkles,
+  Edit
 } from 'lucide-react';
 import { generateContentIdeas } from '@/ai/flows/generate-content-ideas';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, orderBy, updateDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'];
@@ -56,6 +57,8 @@ type FilterType = ContentType | 'All' | 'Favorites';
 export default function IdeasPage() {
   const [filter, setFilter] = useState<FilterType>('All');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -93,10 +96,23 @@ export default function IdeasPage() {
   const addIdea = (newIdea: Omit<ContentIdea, 'id' | 'createdAt'>) => {
     if (ideasCollection) {
       addDocumentNonBlocking(ideasCollection, { ...newIdea, createdAt: serverTimestamp() });
-      // Closing the dialog is handled by the component state
+      setAddDialogOpen(false);
     }
   };
+
+  const editIdea = async (updatedData: Partial<Omit<ContentIdea, 'id' | 'createdAt'>>) => {
+    if (!user || !selectedIdea) return;
+    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, selectedIdea.id);
+    await updateDoc(ideaDoc, updatedData);
+    setEditDialogOpen(false);
+    setSelectedIdea(null);
+  };
   
+  const openEditDialog = (idea: ContentIdea) => {
+    setSelectedIdea(idea);
+    setEditDialogOpen(true);
+  };
+
   const filteredIdeas = (ideas || []).filter(idea => {
     if (filter === 'All') return true;
     if (filter === 'Favorites') return idea.isFavorite;
@@ -116,7 +132,7 @@ export default function IdeasPage() {
                     <Plus className="mr-2 h-4 w-4" /> Adicionar Ideia
                 </Button>
             </DialogTrigger>
-            <AddIdeaDialog onAddIdea={(idea) => { addIdea(idea); setAddDialogOpen(false); }} />
+            <AddIdeaDialog onAddIdea={addIdea} />
         </Dialog>
       </div>
 
@@ -149,6 +165,7 @@ export default function IdeasPage() {
                         onToggleFavorite={toggleFavorite} 
                         onToggleCompleted={toggleCompleted}
                         onDelete={deleteIdea}
+                        onEdit={openEditDialog}
                     />
                 ))
             ) : !isLoading && (
@@ -159,15 +176,23 @@ export default function IdeasPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setSelectedIdea(null); setEditDialogOpen(isOpen); }}>
+        <EditIdeaDialog
+          idea={selectedIdea}
+          onEditIdea={editIdea}
+        />
+      </Dialog>
     </div>
   );
 }
 
-function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
+function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit }: {
     idea: ContentIdea,
     onToggleFavorite: (id: string, isFavorite: boolean) => void,
     onToggleCompleted: (id: string, isCompleted: boolean) => void,
     onDelete: (id: string) => void,
+    onEdit: (idea: ContentIdea) => void,
 }) {
     return (
         <Card className={`flex flex-col transition-all ${idea.isCompleted ? 'bg-muted/30' : 'bg-card'}`}>
@@ -197,6 +222,9 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete }: {
                             </Button>
                         </a>
                     )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(idea)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={() => onDelete(idea.id)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -242,7 +270,7 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="contentType">Tipo de Conteúdo</Label>
-                    <Select onValueChange={(v) => setContentType(v as ContentType)}>
+                    <Select onValueChange={(v) => setContentType(v as ContentType)} value={contentType}>
                         <SelectTrigger id="contentType">
                             <SelectValue placeholder="Selecione um tipo de conteúdo" />
                         </SelectTrigger>
@@ -262,6 +290,66 @@ function AddIdeaDialog({ onAddIdea }: { onAddIdea: (idea: Omit<ContentIdea, 'id'
     );
 }
 
+function EditIdeaDialog({ idea, onEditIdea }: { idea: ContentIdea | null, onEditIdea: (data: Partial<Omit<ContentIdea, 'id' | 'createdAt'>>) => void }) {
+    const [description, setDescription] = useState('');
+    const [videoLink, setVideoLink] = useState('');
+    const [contentType, setContentType] = useState<ContentType | ''>('');
+
+    useState(() => {
+      if (idea) {
+        setDescription(idea.description);
+        setVideoLink(idea.videoLink);
+        setContentType(idea.contentType);
+      }
+    }, [idea]);
+
+    const handleSubmit = () => {
+        if(description && contentType && idea) {
+            onEditIdea({
+                description,
+                videoLink,
+                contentType,
+            });
+        }
+    }
+
+    if (!idea) return null;
+
+    return (
+         <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Editar Ideia de Conteúdo</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="edit-description">Descrição da Ideia</Label>
+                    <Textarea id="edit-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva sua ideia brilhante..." />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-videoLink">Link de Inspiração (Opcional)</Label>
+                    <Input id="edit-videoLink" value={videoLink} onChange={e => setVideoLink(e.target.value)} placeholder="https://youtube.com/..." />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-contentType">Tipo de Conteúdo</Label>
+                    <Select onValueChange={(v) => setContentType(v as ContentType)} value={contentType}>
+                        <SelectTrigger id="edit-contentType">
+                            <SelectValue placeholder="Selecione um tipo de conteúdo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {contentTypes.map((type) => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <DialogFooter>
+                <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                <Button onClick={handleSubmit} disabled={!description || !contentType}>Guardar Alterações</Button>
+            </DialogFooter>
+        </DialogContent>
+    );
+}
 
 function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentIdea, 'id' | 'createdAt'>) => void, disabled: boolean }) {
     const { toast } = useToast();
