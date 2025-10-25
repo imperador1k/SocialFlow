@@ -88,8 +88,8 @@ export default function TasksPage() {
     }
   };
 
-  const pendingTasks = tasks.filter(task => !task.completed);
-  const completedTasks = tasks.filter(task => task.completed);
+  const pendingTasks = (tasks || []).filter(task => !task.completed);
+  const completedTasks = (tasks || []).filter(task => task.completed);
 
   return (
     <Card>
