@@ -220,6 +220,44 @@ function StrategyTabContent() {
       
       <AIEngagementBoosterCard onHooksGenerated={addHooks} onCtasGenerated={addCtas} />
 
+      <Card className="border-primary/50 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="text-primary" /> Estratégia de Viralização & Algoritmo
+          </CardTitle>
+          <CardDescription>
+            Ações essenciais para "aquecer" a conta e mostrar às plataformas que é um humano real.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Bot className="w-4 h-4" /> 1. Evitar Comportamento de Robô
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              O algoritmo favorece contas que agem como utilizadores reais. Antes e depois de postar:
+            </p>
+            <ul className="list-disc pl-5 text-sm space-y-1">
+              <li><strong>Interagir:</strong> Dar like, salvar e comentar em outros vídeos do seu nicho.</li>
+              <li><strong>Assistir:</strong> Ver vídeos até ao final (sem pular) para gerar retenção real.</li>
+              <li><strong>Partilhar:</strong> Clicar em partilhar e "Copiar Link" (sinal forte de interesse).</li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Handshake className="w-4 h-4" /> 2. Gestão de Comunidade
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              O engajamento nos primeiros minutos é crucial.
+            </p>
+            <ul className="list-disc pl-5 text-sm space-y-1">
+              <li><strong>Responder a Comentários:</strong> Priorize comentários com mais de 5 palavras (são mais valiosos).</li>
+              <li><strong>Gerar Conversa:</strong> Responda com perguntas para incentivar mais respostas.</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Kit de Ferramentas de Engajamento</CardTitle>
