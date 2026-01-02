@@ -39,57 +39,57 @@ import { signOut } from 'firebase/auth';
 
 
 function centerAspectCrop(
-    mediaWidth: number,
-    mediaHeight: number,
-    aspect: number
-  ) {
-    return centerCrop(
-      makeAspectCrop(
-        {
-          unit: '%',
-          width: 90,
-        },
-        aspect,
-        mediaWidth,
-        mediaHeight
-      ),
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect: number
+) {
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: '%',
+        width: 90,
+      },
+      aspect,
       mediaWidth,
       mediaHeight
-    )
+    ),
+    mediaWidth,
+    mediaHeight
+  )
+}
+
+async function getCroppedImg(
+  image: HTMLImageElement,
+  crop: PixelCrop,
+): Promise<string> {
+  const canvas = document.createElement('canvas');
+  canvas.width = crop.width;
+  canvas.height = crop.height;
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    throw new Error('No 2d context');
   }
 
-  async function getCroppedImg(
-    image: HTMLImageElement,
-    crop: PixelCrop,
-  ): Promise<string> {
-    const canvas = document.createElement('canvas');
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-    const ctx = canvas.getContext('2d');
-  
-    if (!ctx) {
-      throw new Error('No 2d context');
-    }
-  
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-  
-    ctx.drawImage(
-      image,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-  
-    return new Promise((resolve) => {
-        resolve(canvas.toDataURL('image/jpeg'));
-    });
-  }
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    crop.width * scaleX,
+    crop.height * scaleY,
+    0,
+    0,
+    crop.width,
+    crop.height
+  );
+
+  return new Promise((resolve) => {
+    resolve(canvas.toDataURL('image/jpeg'));
+  });
+}
 
 export default function SettingsPage() {
   return (
@@ -116,10 +116,10 @@ function ProfileSettings() {
   }, [user, firestore]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileDoc);
-  
+
   const [name, setName] = useState('');
   const [displayAvatar, setDisplayAvatar] = useState('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>();
@@ -129,9 +129,9 @@ function ProfileSettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [newAvatarCropped, setNewAvatarCropped] = useState<string | null>(null);
-  
+
   const originalName = userProfile?.name || user?.displayName || '';
-  
+
   const hasNameChanged = name !== '' && name !== originalName;
 
   useEffect(() => {
@@ -145,35 +145,35 @@ function ProfileSettings() {
     if (!newAvatarCropped || !user || !userProfileDoc) return;
 
     const uploadAndSaveAvatar = async () => {
-        setIsSaving(true);
-        try {
-            const storage = getStorage();
-            const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-            
-            await uploadString(avatarRef, newAvatarCropped, 'data_url');
-            const finalAvatarUrl = await getDownloadURL(avatarRef);
+      setIsSaving(true);
+      try {
+        const storage = getStorage();
+        const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
 
-            await updateDoc(userProfileDoc, { avatar: finalAvatarUrl });
-            
-            setDisplayAvatar(finalAvatarUrl); 
-            toast({
-                title: "Avatar Atualizado",
-                description: "A sua nova foto de perfil foi guardada.",
-            });
-        } catch (e) {
-            console.error("Error uploading avatar: ", e);
-            toast({
-                variant: 'destructive',
-                title: "Erro ao Guardar Avatar",
-                description: "Não foi possível guardar a sua nova foto.",
-            });
-            setDisplayAvatar(userProfile?.avatar || user?.photoURL || '');
-        } finally {
-            setIsSaving(false);
-            setNewAvatarCropped(null); 
-        }
+        await uploadString(avatarRef, newAvatarCropped, 'data_url');
+        const finalAvatarUrl = await getDownloadURL(avatarRef);
+
+        await updateDoc(userProfileDoc, { avatar: finalAvatarUrl });
+
+        setDisplayAvatar(finalAvatarUrl);
+        toast({
+          title: "Avatar Atualizado",
+          description: "A sua nova foto de perfil foi guardada.",
+        });
+      } catch (e) {
+        console.error("Error uploading avatar: ", e);
+        toast({
+          variant: 'destructive',
+          title: "Erro ao Guardar Avatar",
+          description: "Não foi possível guardar a sua nova foto.",
+        });
+        setDisplayAvatar(userProfile?.avatar || user?.photoURL || '');
+      } finally {
+        setIsSaving(false);
+        setNewAvatarCropped(null);
+      }
     };
-    
+
     uploadAndSaveAvatar();
   }, [newAvatarCropped, user, userProfileDoc, toast, userProfile?.avatar, user?.photoURL]);
 
@@ -181,7 +181,7 @@ function ProfileSettings() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setCrop(undefined); 
+      setCrop(undefined);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImgSrc(reader.result as string);
@@ -191,7 +191,7 @@ function ProfileSettings() {
       event.target.value = '';
     }
   };
-  
+
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget
     setCrop(centerAspectCrop(width, height, 1))
@@ -203,45 +203,45 @@ function ProfileSettings() {
 
   const handleSaveChanges = async () => {
     if (!user || !userProfileDoc) return;
-    if(!hasNameChanged) return;
+    if (!hasNameChanged) return;
 
     setIsSaving(true);
     try {
-        await updateDoc(userProfileDoc, { name: name });
-        toast({
-            title: "Perfil Atualizado",
-            description: "O seu nome foi guardado com sucesso.",
-        });
+      await updateDoc(userProfileDoc, { name: name });
+      toast({
+        title: "Perfil Atualizado",
+        description: "O seu nome foi guardado com sucesso.",
+      });
     } catch (e) {
-        console.error("Error saving name: ", e);
-        toast({
-            variant: 'destructive',
-            title: "Erro ao Guardar",
-            description: "Não foi possível guardar as alterações no seu nome.",
-        });
+      console.error("Error saving name: ", e);
+      toast({
+        variant: 'destructive',
+        title: "Erro ao Guardar",
+        description: "Não foi possível guardar as alterações no seu nome.",
+      });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
   const handleCropComplete = async () => {
     if (imgRef.current && completedCrop?.width && completedCrop?.height) {
-        try {
-            const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
-            setNewAvatarCropped(croppedImageBase64); 
-            setDisplayAvatar(croppedImageBase64); 
-        } catch (e) {
-            console.error("Error cropping image:", e);
-            toast({
-                variant: 'destructive',
-                title: "Erro ao Cortar",
-                description: "Não foi possível processar a imagem.",
-            });
-        }
+      try {
+        const croppedImageBase64 = await getCroppedImg(imgRef.current, completedCrop);
+        setNewAvatarCropped(croppedImageBase64);
+        setDisplayAvatar(croppedImageBase64);
+      } catch (e) {
+        console.error("Error cropping image:", e);
+        toast({
+          variant: 'destructive',
+          title: "Erro ao Cortar",
+          description: "Não foi possível processar a imagem.",
+        });
+      }
     }
     setCropModalOpen(false);
   };
-  
+
   const handleSignOut = () => {
     signOut(auth).catch((error) => {
       console.error('Error signing out: ', error);
@@ -257,15 +257,15 @@ function ProfileSettings() {
 
   if (isProfileLoading) {
     return <Card>
-        <CardHeader>
-            <CardTitle>Perfil</CardTitle>
-            <CardDescription>É assim que os outros o verão no site.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="flex items-center justify-center p-10">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        </CardContent>
+      <CardHeader>
+        <CardTitle>Perfil</CardTitle>
+        <CardDescription>É assim que os outros o verão no site.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-center p-10">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </CardContent>
     </Card>;
   }
 
@@ -302,7 +302,7 @@ function ProfileSettings() {
           <Button onClick={handleSaveChanges} disabled={isSaving || !hasNameChanged}>
             {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Guardar Alterações
-            </Button>
+          </Button>
         </CardFooter>
       </Card>
 
@@ -320,7 +320,7 @@ function ProfileSettings() {
       </Card>
 
       <Dialog open={isCropModalOpen} onOpenChange={setCropModalOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Cortar a sua nova foto de perfil</DialogTitle>
           </DialogHeader>
@@ -339,7 +339,7 @@ function ProfileSettings() {
           )}
           <DialogFooter>
             <DialogClose asChild>
-                <Button variant="outline" disabled={isSaving}>Cancelar</Button>
+              <Button variant="outline" disabled={isSaving}>Cancelar</Button>
             </DialogClose>
             <Button onClick={handleCropComplete} disabled={isSaving || !completedCrop?.width || !completedCrop?.height}>Cortar e Confirmar</Button>
           </DialogFooter>
@@ -349,4 +349,3 @@ function ProfileSettings() {
   )
 }
 
-    
