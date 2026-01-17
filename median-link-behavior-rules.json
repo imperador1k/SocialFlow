@@ -17,9 +17,9 @@
   {
     "id": 3,
     "mode": "external",
-    "label": "Twitter/X",
+    "label": "LinkedIn",
     "pagesToTrigger": "custom",
-    "regex": "https?://([\\-\\w]+\\.)*(twitter|x)\\.com/.*"
+    "regex": "https?://([\\-\\w]+\\.)*linkedin\\.com/.*"
   },
   {
     "id": 4,

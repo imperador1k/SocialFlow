@@ -30,22 +30,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
 const distributionData = [
-  { type: 'Humor/Memes', value: 40, fill: 'var(--color-humor)' },
-  { type: 'Skills/Highlights', value: 35, fill: 'var(--color-skills)' },
-  { type: 'Mindset/Rotina', value: 25, fill: 'var(--color-mindset)' },
+  { type: 'Humor/Memes', value: 20, fill: 'var(--color-humor)' },
+  { type: 'Skills/Highlights', value: 50, fill: 'var(--color-skills)' },
+  { type: 'Mindset/Rotina', value: 30, fill: 'var(--color-mindset)' },
 ];
 
 const chartConfig = {
-  humor: { label: 'Humor/Memes (40%)', color: 'hsl(var(--chart-1))' },
-  skills: { label: 'Skills/Highlights (35%)', color: 'hsl(var(--chart-2))' },
-  mindset: { label: 'Mindset/Rotina (25%)', color: 'hsl(var(--chart-3))' },
+  humor: { label: 'Humor/Memes (20%)', color: 'hsl(var(--chart-1))' },
+  skills: { label: 'Skills/Highlights (50%)', color: 'hsl(var(--chart-2))' },
+  mindset: { label: 'Mindset/Rotina (30%)', color: 'hsl(var(--chart-3))' },
 };
 
 const publishingSchedule = [
   { platform: 'Instagram', frequency: '4-5x a week', times: '9am, 12pm, 5pm' },
-  { platform: 'TikTok', frequency: '1-2x a day', times: '7am, 11am, 4pm, 8pm' },
-  { platform: 'YouTube', frequency: '1x a week', times: 'Wednesday 3pm' },
-  { platform: 'X/Twitter', frequency: '3-5x a day', times: 'Throughout the day' },
+  { platform: 'TikTok', frequency: '4-5x a day', times: '7am, 11am, 4pm, 8pm' },
+  { platform: 'YouTube', frequency: '2x a week', times: 'Wednesday 3pm' },
+  { platform: 'LinkedIn', frequency: '2x a week', times: 'Weekends' },
 ];
 
 const initialCtaExamples = [
@@ -399,7 +399,7 @@ function ContentPlanTab() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm"><strong>🎬 Hook:</strong> "Saudações Meus Caros, eu sou o irmão do Lamine Yamal…"</p>
-                                <p className="text-sm"><strong>📹 Execução:</strong> Mostras um skill, depois falhas de propósito → termina com "Wasted" ou "Missão Falhada".</p>
+                                <p className="text-sm"><strong>📹 Execução:</strong> O Humor deve ser "Relatable": Coisas que só quem joga entende (ex: a dor de levar uma bolada na coxa num dia de frio, o tipo que nunca passa a bola) → termina com "Wasted" ou "Missão Falhada".</p>
                             </CardContent>
                         </Card>
                          <Card>
@@ -417,7 +417,7 @@ function ContentPlanTab() {
                                 <CardTitle className="text-base flex justify-between"><span>💀 "Erro Épico"</span><Badge variant="secondary">Engajamento</Badge></CardTitle>
                             </CardHeader>
                             <CardContent>
-                               <p className="text-sm"><strong>🎬 Exemplo:</strong> Desafio da barra → se falhas, "Missão Falhada". Se acertas, reação cómica + hype.</p>
+                               <p className="text-sm"><strong>🎬 Exemplo:</strong> POV: You scored a worldie but have no fans to celebrate with.</p>
                             </CardContent>
                         </Card>
                     </CardContent>
@@ -437,8 +437,8 @@ function ContentPlanTab() {
                             <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Circuito com cones, sprint e finalização — música hype.</p></CardContent>
                         </Card>
                          <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🎯 Desafio da Barra</span><Badge variant="secondary">Desafio</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>💬 Texto:</strong> "Se não acertar, Missão Falhada."</p></CardContent>
+                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🎯 Mostrar Resultados</span><Badge variant="secondary">Desafio</Badge></CardTitle></CardHeader>
+                            <CardContent><p className="text-sm"><strong>💬 Execução:</strong> Filma-te a fazer testes físicos. Qual é o teu tempo nos 100m? Quantos km corres num jogo?</p></CardContent>
                         </Card>
                          <Card>
                             <CardHeader><CardTitle className="text-base flex justify-between"><span>🦶 Evolução do Pé Fraco</span><Badge variant="secondary">Progresso</Badge></CardTitle></CardHeader>
