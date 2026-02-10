@@ -65,6 +65,7 @@ Generate 5 "absurdly incredible" examples for the content type: **{{{contentType
 The examples must be perfectly tailored to Valter's brand. Do not provide generic marketing phrases. Think like a fan who knows his content inside and out.
 
 Return ONLY a JSON object with a "content" property, which is an array of 5 strings.
+Generate in Portuguese Language!
 `,
 });
 

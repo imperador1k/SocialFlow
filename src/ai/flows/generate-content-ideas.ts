@@ -77,6 +77,7 @@ Generate {{numberOfIdeas}} new, specific, and creative content ideas for the con
 - **If 'YouTube':** Suggest long-form content about the journey, match analysis, or full workout sessions.
 
 Return ONLY a JSON object with an "ideas" property, which is an array of strings. Each string in the array should be a single, distinct idea. Do not add any other text or formatting.
+Generate in Portuguese Language!
 `,
 });
 

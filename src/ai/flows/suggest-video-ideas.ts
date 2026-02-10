@@ -43,6 +43,7 @@ const suggestVideoIdeasPrompt = ai.definePrompt({
   prompt: `You are a creative video content strategist. Generate {{numberOfIdeas}} video content ideas for {{{contentType}}} content. The ideas should be specific and actionable.
 
 Return the video ideas as a numbered list.
+Generate in Portuguese Language!
 `,
 });
 
