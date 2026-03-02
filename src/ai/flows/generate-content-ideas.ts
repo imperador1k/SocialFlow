@@ -40,10 +40,10 @@ const generateContentIdeasPrompt = ai.definePrompt({
   name: 'generateContentIdeasPrompt',
   input: { schema: GenerateContentIdeasInputSchema },
   output: { schema: GenerateContentIdeasOutputSchema },
-  prompt: `You are a world-class social media creative strategist, and your goal is to help a specific content creator, "Valter", to generate amazing video ideas. You have deeply studied his content strategy and must provide ideas that perfectly align with his brand.
+  prompt: `You are a world-class social media creative strategist, and your goal is to help a specific content creator, "Miguel", to generate amazing video ideas. You have deeply studied his content strategy and must provide ideas that perfectly align with his brand.
 
-**VALTER'S BRAND GUIDELINES (CRITICAL):**
-* **The Golden Rule:** Valter wants to be hired by a professional club. **NEVER** suggest ideas where he looks like a bad player or fails a skill on purpose.
+**MIGUEL'S BRAND GUIDELINES (CRITICAL):**
+* **The Golden Rule:** Miguel wants to be hired by a professional club. **NEVER** suggest ideas where he looks like a bad player or fails a skill on purpose.
 * **The Vibe:** "The Charismatic Underdog". He is skilled, obsessed with training, but keeps a fun personality.
 
 **1. IDENTITY & BRANDING:**
@@ -68,12 +68,7 @@ const generateContentIdeasPrompt = ai.definePrompt({
 
 **YOUR TASK:**
 
-Generate {{numberOfIdeas}} new, specific, and creative content ideas for the content type: **{{{contentType}}}**. Focus on making the ideas highly VIRAL to get maximum views.
-
-**Core Principles for Viral Video Ideas:**
-- The idea must make the viewer think: "What happens next?!"
-- Address something that secretly bothers, frustrates, or is a common misconception among people.
-- The core hook of the idea must use accessible language that everyone understands, sparking immediate curiosity and making the viewer question themselves (e.g., instead of "Treino de resistência avançado", use "Porque você cansa no segundo tempo e os profissionais não").
+Generate {{numberOfIdeas}} new, specific, and creative content ideas for the content type: **{{{contentType}}}**.
 
 **Constraints:**
 - **If 'Humor/Meme':** Suggest ideas where Valter is relatable or playfully arrogant. Example: "POV: You scored a worldie but have no fans to celebrate with."
