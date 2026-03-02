@@ -4,46 +4,47 @@
 import { useState, useEffect } from 'react';
 import type { ContentIdea, ContentType } from '@/lib/types';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+    DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Plus,
-  Star,
-  Trash2,
-  ExternalLink,
-  Lightbulb,
-  Loader2,
-  Sparkles,
-  Edit
+    Plus,
+    Star,
+    Trash2,
+    ExternalLink,
+    Lightbulb,
+    Loader2,
+    Sparkles,
+    Edit
 } from 'lucide-react';
 import { generateContentIdeas } from '@/ai/flows/generate-content-ideas';
+import { generateVideoBlueprint, type VideoBlueprint } from '@/ai/flows/generate-video-blueprint';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
@@ -55,137 +56,139 @@ type FilterType = ContentType | 'All' | 'Favorites';
 
 
 export default function IdeasPage() {
-  const [filter, setFilter] = useState<FilterType>('All');
-  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
+    const [filter, setFilter] = useState<FilterType>('All');
+    const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+    const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+    const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
 
-  const firestore = useFirestore();
-  const { user } = useUser();
+    const firestore = useFirestore();
+    const { user } = useUser();
 
-  const ideasCollection = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, `users/${user.uid}/contentIdeas`);
-  }, [firestore, user]);
+    const ideasCollection = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, `users/${user.uid}/contentIdeas`);
+    }, [firestore, user]);
 
-  const ideasQuery = useMemoFirebase(() => {
-    if (!ideasCollection) return null;
-    return query(ideasCollection, orderBy('createdAt', 'desc'));
-  }, [ideasCollection]);
+    const ideasQuery = useMemoFirebase(() => {
+        if (!ideasCollection) return null;
+        return query(ideasCollection, orderBy('createdAt', 'desc'));
+    }, [ideasCollection]);
 
-  const { data: ideas = [], isLoading } = useCollection<Omit<ContentIdea, 'id'>>(ideasQuery);
+    const { data: ideas = [], isLoading } = useCollection<Omit<ContentIdea, 'id'>>(ideasQuery);
 
-  const toggleFavorite = (id: string, isFavorite: boolean) => {
-    if (!user) return;
-    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
-    updateDocumentNonBlocking(ideaDoc, { isFavorite: !isFavorite });
-  };
+    const toggleFavorite = (id: string, isFavorite: boolean) => {
+        if (!user) return;
+        const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
+        updateDocumentNonBlocking(ideaDoc, { isFavorite: !isFavorite });
+    };
 
-  const toggleCompleted = (id: string, isCompleted: boolean) => {
-    if (!user) return;
-    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
-    updateDocumentNonBlocking(ideaDoc, { isCompleted: !isCompleted });
-  };
+    const toggleCompleted = (id: string, isCompleted: boolean) => {
+        if (!user) return;
+        const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
+        updateDocumentNonBlocking(ideaDoc, { isCompleted: !isCompleted });
+    };
 
-  const deleteIdea = (id: string) => {
-    if (!user) return;
-    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
-    deleteDocumentNonBlocking(ideaDoc);
-  };
+    const deleteIdea = (id: string) => {
+        if (!user) return;
+        const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, id);
+        deleteDocumentNonBlocking(ideaDoc);
+    };
 
-  const addIdea = (newIdea: Omit<ContentIdea, 'id' | 'createdAt'>) => {
-    if (ideasCollection) {
-      addDocumentNonBlocking(ideasCollection, { ...newIdea, createdAt: serverTimestamp() });
-      setAddDialogOpen(false);
-    }
-  };
+    const addIdea = (newIdea: Omit<ContentIdea, 'id' | 'createdAt'>) => {
+        if (ideasCollection) {
+            addDocumentNonBlocking(ideasCollection, { ...newIdea, createdAt: serverTimestamp() });
+            setAddDialogOpen(false);
+        }
+    };
 
-  const editIdea = async (updatedData: Partial<Omit<ContentIdea, 'id' | 'createdAt'>>) => {
-    if (!user || !selectedIdea) return;
-    const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, selectedIdea.id);
-    await updateDoc(ideaDoc, updatedData);
-    setEditDialogOpen(false);
-    setSelectedIdea(null);
-  };
-  
-  const openEditDialog = (idea: ContentIdea) => {
-    setSelectedIdea(idea);
-    setEditDialogOpen(true);
-  };
+    const editIdea = async (updatedData: Partial<Omit<ContentIdea, 'id' | 'createdAt'>>) => {
+        if (!user || !selectedIdea) return;
+        const ideaDoc = doc(firestore, `users/${user.uid}/contentIdeas`, selectedIdea.id);
+        await updateDoc(ideaDoc, updatedData);
+        setEditDialogOpen(false);
+        setSelectedIdea(null);
+    };
 
-  const filteredIdeas = (ideas || []).filter(idea => {
-    if (filter === 'All') return true;
-    if (filter === 'Favorites') return idea.isFavorite;
-    return idea.contentType === filter;
-  });
+    const openEditDialog = (idea: ContentIdea) => {
+        setSelectedIdea(idea);
+        setEditDialogOpen(true);
+    };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Ideias de Conteúdo</h1>
-          <p className="text-muted-foreground">Gerencie e brainstorm suas próximas ideias de vídeo viral.</p>
-        </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-                <Button disabled={!user}>
-                    <Plus className="mr-2 h-4 w-4" /> Adicionar Ideia
-                </Button>
-            </DialogTrigger>
-            <AddIdeaDialog onAddIdea={addIdea} onOpenChange={setAddDialogOpen} />
-        </Dialog>
-      </div>
+    const filteredIdeas = (ideas || []).filter(idea => {
+        if (filter === 'All') return true;
+        if (filter === 'Favorites') return idea.isFavorite;
+        return idea.contentType === filter;
+    });
 
-      <AIBrainstormCard addIdea={addIdea} disabled={!user} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Sua Lista de Ideias</CardTitle>
-          <CardDescription>
-            Aqui estão todas as suas ideias de conteúdo. Filtre-as por categoria.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={filter} onValueChange={(value) => setFilter(value as any)}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="All">Todas</TabsTrigger>
-              {contentTypes.map((type) => (
-                <TabsTrigger key={type} value={type}>{type.split('/')[0]}</TabsTrigger>
-              ))}
-              <TabsTrigger value="Favorites">Favoritos</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {isLoading && <p>A carregar ideias...</p>}
-            {!isLoading && filteredIdeas.length > 0 ? (
-                filteredIdeas.map((idea) => (
-                    <IdeaCard 
-                        key={idea.id} 
-                        idea={idea} 
-                        onToggleFavorite={toggleFavorite} 
-                        onToggleCompleted={toggleCompleted}
-                        onDelete={deleteIdea}
-                        onEdit={openEditDialog}
-                    />
-                ))
-            ) : !isLoading && (
-                <div className="text-center py-12 text-muted-foreground col-span-full">
-                    <p>Nenhuma ideia encontrada para esta categoria. Hora de ter ideias!</p>
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Ideias de Conteúdo</h1>
+                    <p className="text-muted-foreground">Gerencie e brainstorm suas próximas ideias de vídeo viral.</p>
                 </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button disabled={!user}>
+                            <Plus className="mr-2 h-4 w-4" /> Adicionar Ideia
+                        </Button>
+                    </DialogTrigger>
+                    <AddIdeaDialog onAddIdea={addIdea} onOpenChange={setAddDialogOpen} />
+                </Dialog>
+            </div>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setSelectedIdea(null); setEditDialogOpen(isOpen); }}>
-        <EditIdeaDialog
-          idea={selectedIdea}
-          onEditIdea={editIdea}
-          onOpenChange={setEditDialogOpen}
-        />
-      </Dialog>
-    </div>
-  );
+            <AIBrainstormCard addIdea={addIdea} disabled={!user} />
+
+            <AIVideoBlueprintCard addIdea={addIdea} disabled={!user} />
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Sua Lista de Ideias</CardTitle>
+                    <CardDescription>
+                        Aqui estão todas as suas ideias de conteúdo. Filtre-as por categoria.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs value={filter} onValueChange={(value) => setFilter(value as any)}>
+                        <TabsList className="mb-4">
+                            <TabsTrigger value="All">Todas</TabsTrigger>
+                            {contentTypes.map((type) => (
+                                <TabsTrigger key={type} value={type}>{type.split('/')[0]}</TabsTrigger>
+                            ))}
+                            <TabsTrigger value="Favorites">Favoritos</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {isLoading && <p>A carregar ideias...</p>}
+                        {!isLoading && filteredIdeas.length > 0 ? (
+                            filteredIdeas.map((idea) => (
+                                <IdeaCard
+                                    key={idea.id}
+                                    idea={idea}
+                                    onToggleFavorite={toggleFavorite}
+                                    onToggleCompleted={toggleCompleted}
+                                    onDelete={deleteIdea}
+                                    onEdit={openEditDialog}
+                                />
+                            ))
+                        ) : !isLoading && (
+                            <div className="text-center py-12 text-muted-foreground col-span-full">
+                                <p>Nenhuma ideia encontrada para esta categoria. Hora de ter ideias!</p>
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setSelectedIdea(null); setEditDialogOpen(isOpen); }}>
+                <EditIdeaDialog
+                    idea={selectedIdea}
+                    onEditIdea={editIdea}
+                    onOpenChange={setEditDialogOpen}
+                />
+            </Dialog>
+        </div>
+    );
 }
 
 function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit }: {
@@ -235,13 +238,13 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit 
     );
 }
 
-function AddIdeaDialog({ onAddIdea, onOpenChange }: { onAddIdea: (idea: Omit<ContentIdea, 'id'| 'createdAt'>) => void, onOpenChange: (isOpen: boolean) => void }) {
+function AddIdeaDialog({ onAddIdea, onOpenChange }: { onAddIdea: (idea: Omit<ContentIdea, 'id' | 'createdAt'>) => void, onOpenChange: (isOpen: boolean) => void }) {
     const [description, setDescription] = useState('');
     const [videoLink, setVideoLink] = useState('');
     const [contentType, setContentType] = useState<ContentType | ''>('');
 
     const handleSubmit = () => {
-        if(description && contentType) {
+        if (description && contentType) {
             onAddIdea({
                 description,
                 videoLink,
@@ -257,7 +260,7 @@ function AddIdeaDialog({ onAddIdea, onOpenChange }: { onAddIdea: (idea: Omit<Con
     }
 
     return (
-         <DialogContent>
+        <DialogContent>
             <DialogHeader>
                 <DialogTitle>Adicionar Nova Ideia de Conteúdo</DialogTitle>
             </DialogHeader>
@@ -298,15 +301,15 @@ function EditIdeaDialog({ idea, onEditIdea, onOpenChange }: { idea: ContentIdea 
     const [contentType, setContentType] = useState<ContentType | ''>('');
 
     useEffect(() => {
-      if (idea) {
-        setDescription(idea.description);
-        setVideoLink(idea.videoLink || '');
-        setContentType(idea.contentType);
-      }
+        if (idea) {
+            setDescription(idea.description);
+            setVideoLink(idea.videoLink || '');
+            setContentType(idea.contentType);
+        }
     }, [idea]);
 
     const handleSubmit = () => {
-        if(description && contentType && idea) {
+        if (description && contentType && idea) {
             onEditIdea({
                 description,
                 videoLink,
@@ -319,7 +322,7 @@ function EditIdeaDialog({ idea, onEditIdea, onOpenChange }: { idea: ContentIdea 
     if (!idea) return null;
 
     return (
-         <DialogContent>
+        <DialogContent>
             <DialogHeader>
                 <DialogTitle>Editar Ideia de Conteúdo</DialogTitle>
             </DialogHeader>
@@ -396,7 +399,7 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
             <CardContent className="flex flex-col sm:flex-row gap-4 items-center">
                 <div className="w-full sm:w-auto flex-grow space-y-2">
                     <Label htmlFor="ai-contentType">Gerar ideias para:</Label>
-                     <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
+                    <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
                         <SelectTrigger id="ai-contentType">
                             <SelectValue placeholder="Selecione um tipo de conteúdo" />
                         </SelectTrigger>
@@ -417,6 +420,174 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
                         Gerar Ideias
                     </Button>
                 </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentIdea, 'id' | 'createdAt'>) => void, disabled: boolean }) {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [contentType, setContentType] = useState<ContentType>('Humor/Meme');
+    const [videoLengthSecs, setVideoLengthSecs] = useState<string>('35');
+    const [blueprints, setBlueprints] = useState<VideoBlueprint[]>([]);
+
+    const handleGenerateBlueprint = async () => {
+        setIsLoading(true);
+        try {
+            const lengthNum = parseInt(videoLengthSecs, 10) || 35;
+            const result = await generateVideoBlueprint({
+                contentType,
+                numberOfIdeas: 1,
+                videoLengthSeconds: lengthNum,
+                objective: 'Contrato_Profissional'
+            });
+            setBlueprints(result.blueprints);
+            toast({
+                title: "Blueprint Gerado!",
+                description: "O blueprint do vídeo foi gerado com sucesso.",
+            });
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: "Erro",
+                description: "Falha ao gerar blueprint. Por favor, tente novamente.",
+            });
+        }
+        setIsLoading(false);
+    };
+
+    const handleSaveBlueprintAsIdea = (bp: VideoBlueprint) => {
+        const fullDesc = `[${bp.title}]\nHook: ${bp.hook}\nIdea: ${bp.idea}\n\nGuião:\n${bp.script}`;
+        addIdea({
+            description: fullDesc,
+            videoLink: '',
+            contentType: bp.contentType,
+            isFavorite: false,
+            isCompleted: false,
+        });
+        toast({
+            title: "Salvo como Ideia",
+            description: "O blueprint foi adicionado à sua lista de ideias.",
+        });
+    };
+
+    return (
+        <Card className="bg-gradient-to-br from-card to-primary/10 border-primary/20 mt-4">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="text-primary" /> Gerador de Video Blueprint
+                </CardTitle>
+                <CardDescription>
+                    Gere um guião completo, hook curados e uma lista de planos exata para o seu próximo vídeo.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                    <div className="w-full sm:w-1/3 space-y-2">
+                        <Label htmlFor="bp-contentType">Tipo de Conteúdo</Label>
+                        <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
+                            <SelectTrigger id="bp-contentType">
+                                <SelectValue placeholder="Selecione um tipo de conteúdo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'].map((type) => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-full sm:w-1/3 space-y-2">
+                        <Label htmlFor="bp-length">Duração (segundos)</Label>
+                        <Input
+                            id="bp-length"
+                            type="number"
+                            min="10"
+                            max="90"
+                            value={videoLengthSecs}
+                            onChange={(e) => setVideoLengthSecs(e.target.value)}
+                            disabled={disabled || isLoading}
+                            placeholder="35"
+                        />
+                    </div>
+                    <div className="w-full sm:w-1/3">
+                        <Button onClick={handleGenerateBlueprint} disabled={disabled || isLoading} className="w-full">
+                            {isLoading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Lightbulb className="mr-2 h-4 w-4" />
+                            )}
+                            Gerar Vídeo Completo
+                        </Button>
+                    </div>
+                </div>
+
+                {blueprints.length > 0 && (
+                    <div className="mt-6 space-y-6">
+                        {blueprints.map((bp, idx) => (
+                            <Card key={idx} className="bg-background shadow-sm border-muted">
+                                <CardHeader className="pb-3 border-b border-border/50">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                                        <div>
+                                            <CardTitle className="text-lg">{bp.title}</CardTitle>
+                                            <div className="flex gap-2 mt-2 flex-wrap">
+                                                <Badge variant="outline">{bp.contentType}</Badge>
+                                                {bp.usePersonaLine && <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">Persona: Lamine Yamal</Badge>}
+                                                {bp.useWasted && <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20">Efeito Wasted</Badge>}
+                                            </div>
+                                        </div>
+                                        <Button size="sm" variant="secondary" onClick={() => handleSaveBlueprintAsIdea(bp)}>
+                                            <Plus className="h-4 w-4 mr-1" /> Salvar na Lista
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-4 space-y-4 text-sm flex flex-col items-stretch">
+                                    <div>
+                                        <h4 className="font-semibold text-muted-foreground mb-1">Ideia Central</h4>
+                                        <p>{bp.idea}</p>
+                                    </div>
+                                    <div className="bg-muted/30 p-3 rounded-md border border-muted">
+                                        <h4 className="font-semibold text-primary mb-1">🔥 Hook (0-3s)</h4>
+                                        <p className="font-medium">"{bp.hook}"</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold text-muted-foreground mb-1">Guião / Script</h4>
+                                        <p className="leading-relaxed whitespace-pre-wrap">{bp.script}</p>
+                                    </div>
+                                    {bp.shotList && bp.shotList.length > 0 && (
+                                        <div>
+                                            <h4 className="font-semibold text-muted-foreground mb-1">Lista de Planos (Shot List)</h4>
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                {bp.shotList.map((shot, sIdx) => (
+                                                    <li key={sIdx}>{shot}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col sm:flex-row gap-4 pt-4 mt-2 border-t border-border/50">
+                                        <div className="flex-1">
+                                            <h4 className="font-semibold text-muted-foreground mb-1">Chamada para Ação (CTA)</h4>
+                                            <p className="italic text-muted-foreground">"{bp.cta}"</p>
+                                        </div>
+                                        {bp.useWasted && bp.wastedReason && (
+                                            <div className="flex-1">
+                                                <h4 className="font-semibold text-red-500/80 mb-1">Wasted Context</h4>
+                                                <p className="text-muted-foreground text-xs">{bp.wastedReason}</p>
+                                            </div>
+                                        )}
+                                        {bp.usePersonaLine && bp.personaLine && (
+                                            <div className="flex-1">
+                                                <h4 className="font-semibold text-blue-500/80 mb-1">Persona Line</h4>
+                                                <p className="text-muted-foreground text-xs">"{bp.personaLine}"</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

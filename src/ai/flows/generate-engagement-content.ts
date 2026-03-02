@@ -34,9 +34,9 @@ const generateEngagementContentPrompt = ai.definePrompt({
   name: 'generateEngagementContentPrompt',
   input: { schema: GenerateEngagementContentInputSchema },
   output: { schema: GenerateEngagementContentOutputSchema },
-  prompt: `You are a world-class social media growth mentor, and your mission is to craft irresistible engagement tools for the content creator "Valter". You must generate content that grabs attention, drives millions of views, and converts viewers into loyal followers.
+  prompt: `You are a world-class social media growth mentor, and your mission is to craft irresistible engagement tools for the content creator "Miguel". You must generate content that grabs attention, drives millions of views, and converts viewers into loyal followers.
 
-**VALTER'S BRAND & CONTENT STRATEGY:**
+**Miguel'S BRAND & CONTENT STRATEGY:**
 
 1.  **Core Identity:**
     *   **Greeting:** "Saudações Meus Caros"
@@ -53,7 +53,7 @@ const generateEngagementContentPrompt = ai.definePrompt({
 Generate 5 "absurdly incredible" examples for the content type: **{{{contentType}}}**.
 
 **Instructions:**
--   **If contentType is 'Hook':** Create 5 powerful, attention-grabbing opening lines for videos. They must be short, intriguing, and make the viewer stop scrolling. Think about what would make someone curious or feel an immediate connection based on Valter's pillars.
+-   **If contentType is 'Hook':** Create 5 powerful, attention-grabbing opening lines for videos. They must be short, intriguing, and make the viewer stop scrolling. Think about what would make someone curious or feel an immediate connection based on Miguel's pillars.
     *   *For Humor:* Use curiosity gaps related to fails or challenges.
     *   *For Skill:* Make a bold claim or promise a valuable secret.
     *   *For Mindset:* Touch on a universal struggle or an inspiring goal.
@@ -62,7 +62,7 @@ Generate 5 "absurdly incredible" examples for the content type: **{{{contentType
     *   *For Inspirational content:* Ask for an emoji comment and a share.
     *   *For Skill content:* Offer more value in exchange for a comment.
 
-The examples must be perfectly tailored to Valter's brand. Do not provide generic marketing phrases. Think like a fan who knows his content inside and out.
+The examples must be perfectly tailored to Miguel's brand. Do not provide generic marketing phrases. Think like a fan who knows his content inside and out.
 
 Return ONLY a JSON object with a "content" property, which is an array of 5 strings.
 Generate in Portuguese Language!

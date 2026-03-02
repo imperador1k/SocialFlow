@@ -71,7 +71,7 @@ const generateContentIdeasPrompt = ai.definePrompt({
 Generate {{numberOfIdeas}} new, specific, and creative content ideas for the content type: **{{{contentType}}}**.
 
 **Constraints:**
-- **If 'Humor/Meme':** Suggest ideas where Valter is relatable or playfully arrogant. Example: "POV: You scored a worldie but have no fans to celebrate with."
+- **If 'Humor/Meme':** Suggest ideas where Miguel is relatable or playfully arrogant. Example: "POV: You scored a worldie but have no fans to celebrate with."
 - **If 'Skill/Treino':** Focus on ELITE execution. The idea must highlight speed, technique, or power.
 - **If 'Mindset/Rotina':** Focus on the "Obsessed" mentality. The "Underdog" story.
 - **If 'YouTube':** Suggest long-form content about the journey, match analysis, or full workout sessions.
