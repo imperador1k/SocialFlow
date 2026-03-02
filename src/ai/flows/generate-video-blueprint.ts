@@ -34,7 +34,7 @@ const BlueprintSchema = z.object({
     hook: z.string().describe('The first 3-4 seconds of the video. MUST start with "Saudações meus caros..." and contain a tension/curiosity phrase.'),
     script: z.string().describe('The full spoken text in PT-PT. Short, natural. Includes hook, promise, explanation, and CTA. Make it realistic for the requested duration.'),
     shotList: z.array(z.string()).describe('5-10 simple, filmable bullet points.'),
-    cta: z.string().describe('Short and natural Call to Action at the end of the script.'),
+    cta: z.string().describe('Short and natural Call to Action: ask to follow, like, comment, or share. NEVER sell anything.'),
     usePersonaLine: z.boolean().describe('Whether to use the Lamine Yamal persona line in this video.'),
     personaLine: z.string().nullable().describe('If usePersonaLine is true, provide 1 short phrase like "sou o irmão do Lamine Yamal" or variation'),
     useWasted: z.boolean().describe('Whether to use the GTA Wasted effect.'),
@@ -97,6 +97,12 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
   3. Demonstration/explanation.
   4. 1 sentence reinforcing credibility (proof/intensity/repetition).
   5. Short natural CTA.
+
+**5. CTA RULES (CRITICAL):**
+* The CTA must ONLY ask the viewer to: **follow, like, comment, share, or subscribe**.
+* Examples: "Segue para mais", "Deixa o like se também fazes isto", "Comenta o teu recorde", "Partilha com o teu parceiro de treino".
+* **NEVER** use CTAs that sound like selling or influencer marketing (e.g. "Manda-me mensagem", "Link na bio", "Compra", "Contacta-me").
+* Keep it short, 1 sentence max. It should feel like a friend talking, not a brand.
 
 **YOUR TASK:**
 Generate {{numberOfIdeas}} complete video blueprint(s) for the content type: **{{{contentType}}}**.

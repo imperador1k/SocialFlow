@@ -45,7 +45,9 @@ import {
 } from 'lucide-react';
 import { generateContentIdeas } from '@/ai/flows/generate-content-ideas';
 import { generateVideoBlueprint, type VideoBlueprint } from '@/ai/flows/generate-video-blueprint';
+import { analyzeIdea, type AnalyzeIdeaOutput } from '@/ai/flows/analyze-idea';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp, query, orderBy, updateDoc } from 'firebase/firestore';
@@ -239,9 +241,12 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit 
 }
 
 function AddIdeaDialog({ onAddIdea, onOpenChange }: { onAddIdea: (idea: Omit<ContentIdea, 'id' | 'createdAt'>) => void, onOpenChange: (isOpen: boolean) => void }) {
+    const { toast } = useToast();
     const [description, setDescription] = useState('');
     const [videoLink, setVideoLink] = useState('');
     const [contentType, setContentType] = useState<ContentType | ''>('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analysis, setAnalysis] = useState<AnalyzeIdeaOutput | null>(null);
 
     const handleSubmit = () => {
         if (description && contentType) {
@@ -255,41 +260,121 @@ function AddIdeaDialog({ onAddIdea, onOpenChange }: { onAddIdea: (idea: Omit<Con
             setDescription('');
             setVideoLink('');
             setContentType('');
+            setAnalysis(null);
             onOpenChange(false);
         }
     }
 
+    const handleAnalyze = async () => {
+        if (!description || !contentType) return;
+        setIsAnalyzing(true);
+        setAnalysis(null);
+        try {
+            const result = await analyzeIdea({ description, contentType });
+            setAnalysis(result);
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'Falha ao analisar a ideia. Tenta novamente.',
+            });
+        }
+        setIsAnalyzing(false);
+    };
+
+    const verdictColor = (verdict: string) => {
+        switch (verdict) {
+            case 'Excelente': return 'text-green-500';
+            case 'Boa': return 'text-blue-500';
+            case 'Pode Melhorar': return 'text-yellow-500';
+            case 'Reformular': return 'text-red-500';
+            default: return '';
+        }
+    };
+
     return (
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg max-h-[90vh]">
             <DialogHeader>
                 <DialogTitle>Adicionar Nova Ideia de Conteúdo</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label htmlFor="description">Descrição da Ideia</Label>
-                    <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva sua ideia brilhante..." />
+            <ScrollArea className="max-h-[65vh] pr-3">
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Descrição da Ideia</Label>
+                        <Textarea id="description" value={description} onChange={e => { setDescription(e.target.value); setAnalysis(null); }} placeholder="Descreva sua ideia brilhante..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="videoLink">Link de Inspiração (Opcional)</Label>
+                        <Input id="videoLink" value={videoLink} onChange={e => setVideoLink(e.target.value)} placeholder="https://youtube.com/..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="contentType">Tipo de Conteúdo</Label>
+                        <Select onValueChange={(v) => { setContentType(v as ContentType); setAnalysis(null); }} value={contentType}>
+                            <SelectTrigger id="contentType">
+                                <SelectValue placeholder="Selecione um tipo de conteúdo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {contentTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {analysis && (
+                        <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3 text-sm">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4 text-primary" /> Análise IA
+                                </h4>
+                                <div className="flex items-center gap-2">
+                                    <span className={`font-bold text-lg ${verdictColor(analysis.verdict)}`}>{analysis.score}/10</span>
+                                    <Badge className={`${verdictColor(analysis.verdict)} border`} variant="outline">{analysis.verdict}</Badge>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="font-medium text-muted-foreground mb-1">✅ Pontos Fortes</p>
+                                <ul className="list-disc pl-5 space-y-0.5">
+                                    {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                                </ul>
+                            </div>
+                            <div>
+                                <p className="font-medium text-muted-foreground mb-1">💡 Melhorias</p>
+                                <ul className="list-disc pl-5 space-y-0.5">
+                                    {analysis.improvements.map((s, i) => <li key={i}>{s}</li>)}
+                                </ul>
+                            </div>
+                            <div>
+                                <p className="font-medium text-muted-foreground mb-1">🎯 Brand Fit</p>
+                                <p>{analysis.brandFit}</p>
+                            </div>
+                            <div className="bg-muted/30 p-2 rounded-md border border-muted">
+                                <p className="font-medium text-primary mb-1">🔥 Hook Sugerido</p>
+                                <p className="italic">"{analysis.suggestedHook}"</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="videoLink">Link de Inspiração (Opcional)</Label>
-                    <Input id="videoLink" value={videoLink} onChange={e => setVideoLink(e.target.value)} placeholder="https://youtube.com/..." />
+            </ScrollArea>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button
+                    variant="secondary"
+                    onClick={handleAnalyze}
+                    disabled={!description || !contentType || isAnalyzing}
+                    className="w-full sm:w-auto"
+                >
+                    {isAnalyzing ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    Analisar Ideia
+                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={!description || !contentType}>Adicionar Ideia</Button>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="contentType">Tipo de Conteúdo</Label>
-                    <Select onValueChange={(v) => setContentType(v as ContentType)} value={contentType}>
-                        <SelectTrigger id="contentType">
-                            <SelectValue placeholder="Selecione um tipo de conteúdo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {contentTypes.map((type) => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button onClick={handleSubmit} disabled={!description || !contentType}>Adicionar Ideia</Button>
             </DialogFooter>
         </DialogContent>
     );
