@@ -53,10 +53,13 @@ const generateEngagementContentPrompt = ai.definePrompt({
 Generate 5 "absurdly incredible" examples for the content type: **{{{contentType}}}**.
 
 **Instructions:**
--   **If contentType is 'Hook':** Create 5 powerful, attention-grabbing opening lines for videos. They must be short, intriguing, and make the viewer stop scrolling. Think about what would make someone curious or feel an immediate connection based on Valter's pillars.
-    *   *For Humor:* Use curiosity gaps related to fails or challenges.
-    *   *For Skill:* Make a bold claim or promise a valuable secret.
-    *   *For Mindset:* Touch on a universal struggle or an inspiring goal.
+-   **If contentType is 'Hook':** Create 5 powerful, attention-grabbing opening lines for videos focused on **VIRALITY AND MASSIVE VIEWS**.
+    *   **Core Principles:** The viewer MUST desperately want to know what comes next. Talk about something that secretly bothers or frustrates people. Use simple language everyone understands, regardless of their niche knowledge. Make the viewer question themselves!
+    *   **BAD vs GOOD Examples (Follow this logic):**
+        *   BAD: "3 dicas de produtividade" -> GOOD: "Porque acordar cedo está te atrasando"
+        *   BAD: "Treino completo de pernas" -> GOOD: "Porque você treina todos os dias e as suas pernas não crescem"
+        *   BAD: "Otimização tributária através da PJização" -> GOOD: "Como pagar menos impostos virando PJ"
+    *   Apply these principles to Valter's specific pillars (Humor, Skill, Mindset).
 -   **If contentType is 'CTA' (Call to Action):** Create 5 clear, compelling, and high-conversion calls to action. They should give the viewer a strong reason to follow, comment, or share, creating a sense of community and shared journey.
     *   *For Progress-based content:* Encourage following to see the journey.
     *   *For Inspirational content:* Ask for an emoji comment and a share.

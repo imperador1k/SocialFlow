@@ -9,8 +9,8 @@
  * - `GenerateContentIdeasOutput`: The output type for the `generateContentIdeas` function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const GenerateContentIdeasInputSchema = z.object({
   contentType: z
@@ -38,8 +38,8 @@ export async function generateContentIdeas(input: GenerateContentIdeasInput): Pr
 
 const generateContentIdeasPrompt = ai.definePrompt({
   name: 'generateContentIdeasPrompt',
-  input: {schema: GenerateContentIdeasInputSchema},
-  output: {schema: GenerateContentIdeasOutputSchema},
+  input: { schema: GenerateContentIdeasInputSchema },
+  output: { schema: GenerateContentIdeasOutputSchema },
   prompt: `You are a world-class social media creative strategist, and your goal is to help a specific content creator, "Valter", to generate amazing video ideas. You have deeply studied his content strategy and must provide ideas that perfectly align with his brand.
 
 **VALTER'S BRAND GUIDELINES (CRITICAL):**
@@ -68,7 +68,12 @@ const generateContentIdeasPrompt = ai.definePrompt({
 
 **YOUR TASK:**
 
-Generate {{numberOfIdeas}} new, specific, and creative content ideas for the content type: **{{{contentType}}}**.
+Generate {{numberOfIdeas}} new, specific, and creative content ideas for the content type: **{{{contentType}}}**. Focus on making the ideas highly VIRAL to get maximum views.
+
+**Core Principles for Viral Video Ideas:**
+- The idea must make the viewer think: "What happens next?!"
+- Address something that secretly bothers, frustrates, or is a common misconception among people.
+- The core hook of the idea must use accessible language that everyone understands, sparking immediate curiosity and making the viewer question themselves (e.g., instead of "Treino de resistência avançado", use "Porque você cansa no segundo tempo e os profissionais não").
 
 **Constraints:**
 - **If 'Humor/Meme':** Suggest ideas where Valter is relatable or playfully arrogant. Example: "POV: You scored a worldie but have no fans to celebrate with."
@@ -88,7 +93,7 @@ const generateContentIdeasFlow = ai.defineFlow(
     outputSchema: GenerateContentIdeasOutputSchema,
   },
   async input => {
-    const {output} = await generateContentIdeasPrompt(input);
+    const { output } = await generateContentIdeasPrompt(input);
     return output!;
   }
 );

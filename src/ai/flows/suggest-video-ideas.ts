@@ -9,8 +9,8 @@
  * - `SuggestVideoIdeasOutput`: The output type for the `suggestVideoIdeas` function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const SuggestVideoIdeasInputSchema = z.object({
   contentType: z
@@ -38,9 +38,15 @@ export async function suggestVideoIdeas(input: SuggestVideoIdeasInput): Promise<
 
 const suggestVideoIdeasPrompt = ai.definePrompt({
   name: 'suggestVideoIdeasPrompt',
-  input: {schema: SuggestVideoIdeasInputSchema},
-  output: {schema: SuggestVideoIdeasOutputSchema},
-  prompt: `You are a creative video content strategist. Generate {{numberOfIdeas}} video content ideas for {{{contentType}}} content. The ideas should be specific and actionable.
+  input: { schema: SuggestVideoIdeasInputSchema },
+  output: { schema: SuggestVideoIdeasOutputSchema },
+  prompt: `You are a creative video content strategist focused on producing highly VIRAL content. Generate {{numberOfIdeas}} video content ideas for {{{contentType}}} content. The ideas should be specific, actionable, and designed to capture massive attention and views.
+
+**Principles for Viral Hooks & Ideas:**
+1. Leave them wanting more: The concept must make the viewer desperately want to know what comes next.
+2. Hit a nerve: Talk about something that secretly bothers or frustrates people.
+3. Universal language: The hook must use simple language that everyone understands, regardless of their niche.
+4. Make them question themselves: (e.g., instead of "3 dicas de produtividade", use "Porque acordar cedo está te atrasando").
 
 Return the video ideas as a numbered list.
 Generate in Portuguese Language!
@@ -54,7 +60,7 @@ const suggestVideoIdeasFlow = ai.defineFlow(
     outputSchema: SuggestVideoIdeasOutputSchema,
   },
   async input => {
-    const {output} = await suggestVideoIdeasPrompt(input);
+    const { output } = await suggestVideoIdeasPrompt(input);
     return output!;
   }
 );
