@@ -23,6 +23,35 @@ const GenerateVideoBlueprintInputSchema = z.object({
         .string()
         .default('Contrato_Profissional')
         .describe('Main goal of the content creator.'),
+    // ── Series Mode Fields ──
+    format: z
+        .enum(['Avulso', 'Serie'])
+        .default('Avulso')
+        .describe('Whether to generate a standalone video or an episode of a series.'),
+    seriesName: z
+        .string()
+        .optional()
+        .describe('Name of the series. If empty in Serie mode, AI will invent a short memorable name.'),
+    seriesGoal: z
+        .string()
+        .optional()
+        .describe('Goal of the series. E.g. "melhorar pé fraco", "assinar contrato", "aumentar velocidade".'),
+    totalEpisodes: z
+        .number()
+        .optional()
+        .describe('Total planned episodes for the series.'),
+    totalDays: z
+        .number()
+        .optional()
+        .describe('Total days for the series challenge.'),
+    episodeNumber: z
+        .number()
+        .optional()
+        .describe('Current episode number. If empty, AI picks a coherent number.'),
+    previousEpisodesSummary: z
+        .string()
+        .optional()
+        .describe('Summary of previous episodes (bullet points). Used to avoid repetition and ensure progression.'),
 });
 
 export type GenerateVideoBlueprintInput = z.infer<typeof GenerateVideoBlueprintInputSchema>;
@@ -32,7 +61,7 @@ const BlueprintSchema = z.object({
     contentType: z.enum(['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube', 'LinkedIn']),
     idea: z.string().describe('The core concept in 1-2 sentences.'),
     hook: z.string().describe('The first 3-4 seconds of the video. For LinkedIn: professional opening. For other platforms: starts with "Saudações meus caros...".'),
-    script: z.string().describe('The full spoken text in PT-PT. Natural, casual, like talking to a friend. Must feel REAL, not scripted.'),
+    script: z.string().describe('The full spoken text in PT-PT. Natural, casual, like talking to a friend. Must feel REAL, not scripted. DONT USE THE WORD TIPO! I HATE!! FOR EXAMPLE: Eu treino isto à exaustão, tipo, repetição. '),
     shotList: z.array(z.string()).describe('5-10 simple, filmable bullet points.'),
     cta: z.string().describe('Short and natural Call to Action. For LinkedIn: professional CTA. For others: follow, like, comment, share.'),
     usePersonaLine: z.boolean().describe('Whether to use the Lamine Yamal persona line. ALWAYS false for LinkedIn.'),
@@ -40,6 +69,12 @@ const BlueprintSchema = z.object({
     useWasted: z.boolean().describe('Whether to use the GTA Wasted effect. ALWAYS false for LinkedIn.'),
     wastedReason: z.string().nullable().describe('If useWasted is true, the reason for the effect (extreme exhaustion or situational inconvenience).'),
     hashtags: z.array(z.string()).optional(),
+    // ── Series Output Fields ──
+    isSeries: z.boolean().describe('Whether this blueprint is part of a series.'),
+    seriesName: z.string().nullable().describe('Name of the series (null if not a series).'),
+    episodeLabel: z.string().nullable().describe('Episode label like "Episódio 2" or "Dia 2/30" (null if not a series).'),
+    continuityLine: z.string().nullable().describe('1 sentence to create expectation for the next episode (null if not a series).'),
+    nextEpisodeSuggestion: z.string().nullable().describe('1 short idea for the next episode (null if not a series).'),
 });
 
 export type VideoBlueprint = z.infer<typeof BlueprintSchema>;
@@ -75,7 +110,7 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
   - 2.5-4.0s: Promise of what will be shown.
   - *Prohibited Hooks:* Generic things like "Treino de X", "3 dicas", "Hoje vou...".
   - *Preferred Patterns:* "Porque...", "A verdade sobre...", "Estás a fazer X errado...", "Ninguém fala sobre...".
-* **Hook (LinkedIn):** Direct, professional. State the insight or result upfront. Example: "Sprint de 40m em 4.8s. Há 3 meses fazia em 5.3s."
+* **Hook (LinkedIn):** Direct, professional. State the insight or result upfront.
 
 **2. PERSONA: "Irmão do Lamine Yamal"**
 * NOT obligatory. Use ONLY when it makes sense naturally.
@@ -83,10 +118,6 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
 * NEVER use to reduce credibility as a serious player.
 * Don't repeat in every single video — vary the content.
 * \`usePersonaLine\` must be false for LinkedIn content.
-* *When it works:*
-  - Humor/Meme: As part of the gag, early in the video.
-  - Skill/Treino: AFTER showing an impressive rep, as a quick punchline.
-  - Mindset/Rotina: Rarely. Only if it reinforces without distracting.
 
 **3. "WASTED" EFFECT (GTA SA)**
 * Use selectively. NOT on LinkedIn.
@@ -102,32 +133,54 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
 * **Allow natural imperfections** — small pauses, conversational transitions ("tipo...", "sabes?", "olha...").
 * **Allow real emotion** — doubt, love for the game, frustration, ambition, vulnerability.
 * **Do NOT sound like a guru, coach, or influencer.**
-* **Miguel is a young player talking to his audience, not giving a TED talk.**
 * Length: Target {{videoLengthSeconds}} seconds of speaking.
 * Language: PT-PT (Portuguese from Portugal). Young, direct, natural style.
-* Structure:
-  1. Hook
-  2. 1 sentence of context (casual, not formal).
-  3. Demonstration/explanation.
-  4. 1 sentence showing realness (proof/intensity/honest reflection).
-  5. Short natural CTA.
 
 **5. LINKEDIN-SPECIFIC SCRIPT RULES:**
 * Tone: Serious but human. NOT corporate. NOT stiff.
-* NO "Saudações meus caros".
-* NO persona line ("Irmão do Lamine Yamal").
-* NO "Wasted" effect.
-* NO exaggerated humor.
-* Focus on: performance data (sprint times, distances, loads), discipline reflections, real behind-the-scenes of training, honest learnings.
-* Format: 30-60 second videos with professional description text.
-* Language: Clear, mature, but still authentic Miguel — not a different person, just his professional side.
+* NO "Saudações meus caros". NO persona line. NO "Wasted". NO exaggerated humor.
+* Focus on: performance data, discipline reflections, real behind-the-scenes of training, honest learnings.
 * CTA: Professional — connect, follow for the journey, engage with the topic.
 
 **6. CTA RULES (CRITICAL):**
 * **TikTok/Instagram:** Ask to follow, like, comment, share, or subscribe. Keep it natural.
-* **LinkedIn:** Professional CTA — "Acompanha a minha jornada", "O que achas deste progresso?", "Segue para mais dados reais".
-* **NEVER** use CTAs that sound like selling (e.g. "Manda-me mensagem", "Link na bio", "Compra").
-* Keep it short, 1 sentence max. It should feel like a friend talking, not a brand.
+* **LinkedIn:** Professional CTA.
+* **NEVER** use CTAs that sound like selling.
+
+══════════════════════════════════════════════
+**7. SERIES MODE (format = "Serie")**
+══════════════════════════════════════════════
+
+{{#if (eq format "Serie")}}
+**THIS IS A SERIES EPISODE. Follow these rules strictly:**
+
+* **Series Name:** {{#if seriesName}}"{{{seriesName}}}"{{else}}Invent a short, catchy, memorable series name (max 5 words). It should work as a recurring title.{{/if}}
+* **Series Goal:** {{#if seriesGoal}}{{{seriesGoal}}}{{else}}Infer a goal from the content type and context.{{/if}}
+* **Episode Number:** {{#if episodeNumber}}This is Episode {{episodeNumber}}.{{else}}Pick a coherent episode number (start at 1 if no context given).{{/if}}
+* **Total Episodes/Days:** {{#if totalEpisodes}}Total: {{totalEpisodes}} episodes.{{/if}}{{#if totalDays}}Total: {{totalDays}} days.{{/if}}
+* **Previous Episodes Summary:** {{#if previousEpisodesSummary}}{{{previousEpisodesSummary}}}{{else}}No previous context — this is the first episode or standalone.{{/if}}
+
+**SERIES CONTENT RULES:**
+1. The output MUST clearly be an EPISODE — not a random standalone video.
+2. The title must include the episode label (e.g. "Dia 3/30 — Pé Fraco").
+3. If previousEpisodesSummary is provided:
+   - Do NOT repeat the same drill/exercise/scenario from previous episodes.
+   - INCREASE difficulty/progression compared to previous episodes.
+   - Maintain coherence — episode 3 cannot look like episode 1.
+   - Reference previous progress naturally ("ontem fiz X, hoje vou tentar Y").
+4. Include a PROGRESS ELEMENT: metric, time, reps, harder variation, "day X vs day Y" comparison.
+5. The \`continuityLine\` must create anticipation for the NEXT episode:
+   - Example: "Amanhã é o episódio X — segue para não perder."
+   - Example: "No próximo vou tentar fazer isto com o pé esquerdo."
+6. The \`nextEpisodeSuggestion\` should be a concrete 1-line idea for what comes next.
+7. Set \`isSeries\` to true, fill \`seriesName\`, \`episodeLabel\`, \`continuityLine\`, and \`nextEpisodeSuggestion\`.
+
+{{else}}
+**This is a STANDALONE video (format = "Avulso").**
+Set \`isSeries\` to false. Set \`seriesName\`, \`episodeLabel\`, \`continuityLine\`, and \`nextEpisodeSuggestion\` to null.
+{{/if}}
+
+══════════════════════════════════════════════
 
 **YOUR TASK:**
 Generate {{numberOfIdeas}} complete video blueprint(s) for the content type: **{{{contentType}}}**.
@@ -156,7 +209,6 @@ const generateVideoBlueprintFlow = ai.defineFlow(
             return output;
         } catch (error) {
             console.warn('First attempt failed, retrying...', error);
-            // Simple fallback retry
             const { output } = await generateVideoBlueprintPrompt(input);
             if (!output) throw new Error("Output is undefined on retry");
             return output;

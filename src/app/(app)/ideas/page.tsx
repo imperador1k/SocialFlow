@@ -446,11 +446,29 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [contentType, setContentType] = useState<ContentType>('Humor/Meme');
+    // Series state
+    const [format, setFormat] = useState<'Avulso' | 'Serie'>('Avulso');
+    const [seriesName, setSeriesName] = useState('');
+    const [seriesGoal, setSeriesGoal] = useState('');
+    const [totalEpisodes, setTotalEpisodes] = useState('');
+    const [episodeNumber, setEpisodeNumber] = useState('');
+    const [previousSummary, setPreviousSummary] = useState('');
 
     const handleGenerateIdeas = async () => {
         setIsLoading(true);
         try {
-            const result = await generateContentIdeas({ contentType, numberOfIdeas: 3 });
+            const result = await generateContentIdeas({
+                contentType,
+                numberOfIdeas: 3,
+                format,
+                ...(format === 'Serie' && {
+                    seriesName: seriesName || undefined,
+                    seriesGoal: seriesGoal || undefined,
+                    totalEpisodes: totalEpisodes ? parseInt(totalEpisodes, 10) : undefined,
+                    episodeNumber: episodeNumber ? parseInt(episodeNumber, 10) : undefined,
+                    previousEpisodesSummary: previousSummary || undefined,
+                }),
+            });
             result.ideas.forEach(ideaDesc => {
                 addIdea({
                     description: ideaDesc,
@@ -462,7 +480,7 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
             });
             toast({
                 title: "Ideias geradas!",
-                description: "3 novas ideias foram adicionadas à sua lista.",
+                description: `3 novas ideias ${format === 'Serie' ? 'episódicas ' : ''}foram adicionadas à sua lista.`,
             });
         } catch (error) {
             console.error(error);
@@ -481,30 +499,68 @@ function AIBrainstormCard({ addIdea, disabled }: { addIdea: (idea: Omit<ContentI
                 <CardTitle className="flex items-center gap-2"><Lightbulb className="text-primary glow-icon" /> Assistente de Brainstorm IA</CardTitle>
                 <CardDescription>Está sem ideias? Deixe a IA gerar algumas com base na sua estratégia de conteúdo.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col sm:flex-row gap-4 items-center">
-                <div className="w-full sm:w-auto flex-grow space-y-2">
-                    <Label htmlFor="ai-contentType">Gerar ideias para:</Label>
-                    <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
-                        <SelectTrigger id="ai-contentType">
-                            <SelectValue placeholder="Selecione um tipo de conteúdo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {contentTypes.map((type) => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+            <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                    <div className="w-full sm:w-auto flex-grow space-y-2">
+                        <Label htmlFor="ai-contentType">Gerar ideias para:</Label>
+                        <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
+                            <SelectTrigger id="ai-contentType">
+                                <SelectValue placeholder="Selecione um tipo de conteúdo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {contentTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-full sm:w-auto space-y-2">
+                        <Label>Formato:</Label>
+                        <div className="flex items-center gap-2 h-10 rounded-md border border-input bg-background px-3">
+                            <span className={`text-sm ${format === 'Avulso' ? 'font-medium' : 'text-muted-foreground'}`}>Avulso</span>
+                            <Switch checked={format === 'Serie'} onCheckedChange={(checked) => setFormat(checked ? 'Serie' : 'Avulso')} disabled={disabled || isLoading} />
+                            <span className={`text-sm ${format === 'Serie' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>Série</span>
+                        </div>
+                    </div>
+                    <div className="w-full sm:w-auto self-end">
+                        <Button onClick={handleGenerateIdeas} disabled={disabled || isLoading} className="w-full sm:w-auto">
+                            {isLoading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Sparkles className="mr-2 h-4 w-4" />
+                            )}
+                            {format === 'Serie' ? 'Gerar Episódios' : 'Gerar Ideias'}
+                        </Button>
+                    </div>
                 </div>
-                <div className="w-full sm:w-auto self-end">
-                    <Button onClick={handleGenerateIdeas} disabled={disabled || isLoading} className="w-full sm:w-auto">
-                        {isLoading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        Gerar Ideias
-                    </Button>
-                </div>
+
+                {format === 'Serie' && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                        <p className="text-sm font-medium text-primary flex items-center gap-1">📺 Configuração da Série <span className="text-muted-foreground font-normal">(todos opcionais)</span></p>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="bs-seriesName" className="text-xs">Nome da Série</Label>
+                                <Input id="bs-seriesName" value={seriesName} onChange={(e) => setSeriesName(e.target.value)} placeholder='ex: "30 Dias Pé Fraco"' disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bs-seriesGoal" className="text-xs">Objetivo da Série</Label>
+                                <Input id="bs-seriesGoal" value={seriesGoal} onChange={(e) => setSeriesGoal(e.target.value)} placeholder="ex: melhorar pé fraco" disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bs-totalEpisodes" className="text-xs">Total Episódios</Label>
+                                <Input id="bs-totalEpisodes" type="number" min="2" max="90" value={totalEpisodes} onChange={(e) => setTotalEpisodes(e.target.value)} placeholder="ex: 30" disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bs-episodeNumber" className="text-xs">Episódio Atual</Label>
+                                <Input id="bs-episodeNumber" type="number" min="1" value={episodeNumber} onChange={(e) => setEpisodeNumber(e.target.value)} placeholder="ex: 1" disabled={disabled || isLoading} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="bs-prevSummary" className="text-xs">Resumo Episódios Anteriores</Label>
+                            <Textarea id="bs-prevSummary" value={previousSummary} onChange={(e) => setPreviousSummary(e.target.value)} placeholder="Cole aqui bullets do que já aconteceu nos episódios anteriores..." rows={3} disabled={disabled || isLoading} />
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -516,6 +572,14 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
     const [contentType, setContentType] = useState<ContentType>('Humor/Meme');
     const [videoLengthSecs, setVideoLengthSecs] = useState<string>('35');
     const [blueprints, setBlueprints] = useState<VideoBlueprint[]>([]);
+    // Series state
+    const [format, setFormat] = useState<'Avulso' | 'Serie'>('Avulso');
+    const [seriesName, setSeriesName] = useState('');
+    const [seriesGoal, setSeriesGoal] = useState('');
+    const [totalEpisodes, setTotalEpisodes] = useState('');
+    const [totalDays, setTotalDays] = useState('');
+    const [episodeNumber, setEpisodeNumber] = useState('');
+    const [previousSummary, setPreviousSummary] = useState('');
 
     const handleGenerateBlueprint = async () => {
         setIsLoading(true);
@@ -525,12 +589,21 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
                 contentType,
                 numberOfIdeas: 1,
                 videoLengthSeconds: lengthNum,
-                objective: 'Contrato_Profissional'
+                objective: 'Contrato_Profissional',
+                format,
+                ...(format === 'Serie' && {
+                    seriesName: seriesName || undefined,
+                    seriesGoal: seriesGoal || undefined,
+                    totalEpisodes: totalEpisodes ? parseInt(totalEpisodes, 10) : undefined,
+                    totalDays: totalDays ? parseInt(totalDays, 10) : undefined,
+                    episodeNumber: episodeNumber ? parseInt(episodeNumber, 10) : undefined,
+                    previousEpisodesSummary: previousSummary || undefined,
+                }),
             });
             setBlueprints(result.blueprints);
             toast({
                 title: "Blueprint Gerado!",
-                description: "O blueprint do vídeo foi gerado com sucesso.",
+                description: `O blueprint ${format === 'Serie' ? 'episódico ' : ''}foi gerado com sucesso.`,
             });
         } catch (error) {
             console.error(error);
@@ -544,7 +617,12 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
     };
 
     const handleSaveBlueprintAsIdea = (bp: VideoBlueprint) => {
-        const fullDesc = `[${bp.title}]\nHook: ${bp.hook}\nIdea: ${bp.idea}\n\nGuião:\n${bp.script}`;
+        let fullDesc = `[${bp.title}]\nHook: ${bp.hook}\nIdea: ${bp.idea}\n\nGuião:\n${bp.script}`;
+        if (bp.isSeries && bp.seriesName) {
+            fullDesc = `[📺 ${bp.seriesName} — ${bp.episodeLabel}]\nHook: ${bp.hook}\nIdea: ${bp.idea}\n\nGuião:\n${bp.script}`;
+            if (bp.continuityLine) fullDesc += `\n\n🔗 Continuidade: ${bp.continuityLine}`;
+            if (bp.nextEpisodeSuggestion) fullDesc += `\n💡 Próximo: ${bp.nextEpisodeSuggestion}`;
+        }
         addIdea({
             description: fullDesc,
             videoLink: '',
@@ -570,7 +648,7 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4 items-end">
-                    <div className="w-full sm:w-1/3 space-y-2">
+                    <div className="w-full sm:w-1/4 space-y-2">
                         <Label htmlFor="bp-contentType">Tipo de Conteúdo</Label>
                         <Select value={contentType} onValueChange={(v) => setContentType(v as ContentType)} disabled={disabled || isLoading}>
                             <SelectTrigger id="bp-contentType">
@@ -583,7 +661,7 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="w-full sm:w-1/3 space-y-2">
+                    <div className="w-full sm:w-1/4 space-y-2">
                         <Label htmlFor="bp-length">Duração (segundos)</Label>
                         <Input
                             id="bp-length"
@@ -596,17 +674,57 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
                             placeholder="35"
                         />
                     </div>
-                    <div className="w-full sm:w-1/3">
+                    <div className="w-full sm:w-1/4 space-y-2">
+                        <Label>Formato:</Label>
+                        <div className="flex items-center gap-2 h-10 rounded-md border border-input bg-background px-3">
+                            <span className={`text-sm ${format === 'Avulso' ? 'font-medium' : 'text-muted-foreground'}`}>Avulso</span>
+                            <Switch checked={format === 'Serie'} onCheckedChange={(checked) => setFormat(checked ? 'Serie' : 'Avulso')} disabled={disabled || isLoading} />
+                            <span className={`text-sm ${format === 'Serie' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>Série</span>
+                        </div>
+                    </div>
+                    <div className="w-full sm:w-1/4">
                         <Button onClick={handleGenerateBlueprint} disabled={disabled || isLoading} className="w-full">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
                                 <Lightbulb className="mr-2 h-4 w-4" />
                             )}
-                            Gerar Vídeo Completo
+                            {format === 'Serie' ? 'Gerar Episódio' : 'Gerar Vídeo Completo'}
                         </Button>
                     </div>
                 </div>
+
+                {format === 'Serie' && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                        <p className="text-sm font-medium text-primary flex items-center gap-1">📺 Configuração da Série <span className="text-muted-foreground font-normal">(todos opcionais)</span></p>
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="bp-seriesName" className="text-xs">Nome da Série</Label>
+                                <Input id="bp-seriesName" value={seriesName} onChange={(e) => setSeriesName(e.target.value)} placeholder='ex: "30 Dias Pé Fraco"' disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bp-seriesGoal" className="text-xs">Objetivo da Série</Label>
+                                <Input id="bp-seriesGoal" value={seriesGoal} onChange={(e) => setSeriesGoal(e.target.value)} placeholder="ex: melhorar pé fraco" disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bp-episodeNumber" className="text-xs">Episódio Atual</Label>
+                                <Input id="bp-episodeNumber" type="number" min="1" value={episodeNumber} onChange={(e) => setEpisodeNumber(e.target.value)} placeholder="ex: 1" disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bp-totalEpisodes" className="text-xs">Total Episódios</Label>
+                                <Input id="bp-totalEpisodes" type="number" min="2" max="90" value={totalEpisodes} onChange={(e) => setTotalEpisodes(e.target.value)} placeholder="ex: 30" disabled={disabled || isLoading} />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="bp-totalDays" className="text-xs">Total Dias (challenge)</Label>
+                                <Input id="bp-totalDays" type="number" min="2" max="365" value={totalDays} onChange={(e) => setTotalDays(e.target.value)} placeholder="ex: 30" disabled={disabled || isLoading} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="bp-prevSummary" className="text-xs">Resumo Episódios Anteriores</Label>
+                            <Textarea id="bp-prevSummary" value={previousSummary} onChange={(e) => setPreviousSummary(e.target.value)} placeholder="Cole aqui bullets do que já aconteceu nos episódios anteriores...&#10;ex: Ep1: drill básico passe curto&#10;Ep2: drill passe longo com progressão" rows={3} disabled={disabled || isLoading} />
+                        </div>
+                    </div>
+                )}
 
                 {blueprints.length > 0 && (
                     <div className="mt-6 space-y-6">
@@ -618,6 +736,12 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
                                             <CardTitle className="text-lg">{bp.title}</CardTitle>
                                             <div className="flex gap-2 mt-2 flex-wrap">
                                                 <Badge variant="outline">{bp.contentType}</Badge>
+                                                {bp.isSeries && bp.seriesName && (
+                                                    <Badge className="bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 border-purple-500/30">📺 {bp.seriesName}</Badge>
+                                                )}
+                                                {bp.isSeries && bp.episodeLabel && (
+                                                    <Badge className="bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 border-indigo-500/30">{bp.episodeLabel}</Badge>
+                                                )}
                                                 {bp.usePersonaLine && <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">Persona: Lamine Yamal</Badge>}
                                                 {bp.useWasted && <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20">Efeito Wasted</Badge>}
                                             </div>
@@ -650,6 +774,26 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
                                             </ul>
                                         </div>
                                     )}
+
+                                    {/* Series-specific output */}
+                                    {bp.isSeries && (bp.continuityLine || bp.nextEpisodeSuggestion) && (
+                                        <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 space-y-2">
+                                            <h4 className="font-semibold text-purple-500 mb-1">📺 Continuidade da Série</h4>
+                                            {bp.continuityLine && (
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground font-medium mb-0.5">🔗 Frase de Continuidade</p>
+                                                    <p className="italic">"{bp.continuityLine}"</p>
+                                                </div>
+                                            )}
+                                            {bp.nextEpisodeSuggestion && (
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground font-medium mb-0.5">💡 Sugestão Próximo Episódio</p>
+                                                    <p>{bp.nextEpisodeSuggestion}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col sm:flex-row gap-4 pt-4 mt-2 border-t border-border/50">
                                         <div className="flex-1">
                                             <h4 className="font-semibold text-muted-foreground mb-1">Chamada para Ação (CTA)</h4>
@@ -677,3 +821,9 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
         </Card>
     );
 }
+
+
+
+
+
+

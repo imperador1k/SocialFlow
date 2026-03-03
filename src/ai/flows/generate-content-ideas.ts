@@ -2,11 +2,7 @@
 
 /**
  * @fileOverview This file defines a Genkit flow for generating content ideas based on a specific theme.
- *
- * It includes:
- * - `generateContentIdeas`: The main function to generate content ideas.
- * - `GenerateContentIdeasInput`: The input type for the `generateContentIdeas` function.
- * - `GenerateContentIdeasOutput`: The output type for the `generateContentIdeas` function.
+ * Supports both standalone ("Avulso") and series ("Serie") formats.
  */
 
 import { ai } from '@/ai/genkit';
@@ -22,6 +18,35 @@ const GenerateContentIdeasInputSchema = z.object({
     .max(10)
     .default(3)
     .describe('The number of content ideas to generate.'),
+  // ── Series Mode Fields ──
+  format: z
+    .enum(['Avulso', 'Serie'])
+    .default('Avulso')
+    .describe('Whether to generate standalone ideas or episodic series ideas.'),
+  seriesName: z
+    .string()
+    .optional()
+    .describe('Name of the series. If empty, AI invents one.'),
+  seriesGoal: z
+    .string()
+    .optional()
+    .describe('Goal of the series.'),
+  totalEpisodes: z
+    .number()
+    .optional()
+    .describe('Total planned episodes.'),
+  totalDays: z
+    .number()
+    .optional()
+    .describe('Total days for the series challenge.'),
+  episodeNumber: z
+    .number()
+    .optional()
+    .describe('Starting episode number for the generated ideas.'),
+  previousEpisodesSummary: z
+    .string()
+    .optional()
+    .describe('Summary of previous episodes to avoid repetition.'),
 });
 
 export type GenerateContentIdeasInput = z.infer<typeof GenerateContentIdeasInputSchema>;
@@ -52,40 +77,48 @@ const generateContentIdeasPrompt = ai.definePrompt({
     * **Persona:** "Irmão do Lamine Yamal" — use selectively when it makes sense. Not obligatory. NOT on LinkedIn.
 
 **2. CONTENT PILLARS:**
-    * **Skills/Highlights (50%):**
-        * *Goal:* PROOF OF COMPETENCE. Show scouts he is ready.
-        * *Concepts:* High-intensity drills, 1v1 situations, finishing with precision. The product.
-    * **Mindset/Rotina (30%):**
-        * *Goal:* Emotional connection & Discipline.
-        * *Concepts:* The grind, vulnerability, honest moments, real feelings about the journey.
-    * **Humor/Meme (20%):**
-        * *Goal:* Reach & Virality.
-        * *Concepts:* Free agent struggles, relatable football moments, playful confidence. Humor should be natural, not forced.
+    * **Skills/Highlights (50%):** PROOF OF COMPETENCE. Show scouts he is ready.
+    * **Mindset/Rotina (30%):** Emotional connection & Discipline. Real feelings.
+    * **Humor/Meme (20%):** Reach & Virality. Relatable, natural humor.
     * **YouTube:** Long-form journey content, vlogs, full training sessions.
-    * **LinkedIn:** Professional positioning — serious but human, performance data, discipline stories, attract coaches/directors. NO humor, NO persona, NO "Wasted".
+    * **LinkedIn:** Professional positioning — serious but human, performance data, discipline stories. NO humor, NO persona, NO "Wasted".
 
-**3. TONE (ALL PLATFORMS except LinkedIn):**
-    * Write ideas that feel like Miguel talking to a friend.
-    * Short, punchy, natural.
-    * Allow real emotion — doubt, ambition, love for the game, frustration.
-    * Not corporate. Not a motivational speech.
+**3. TONE:** Write ideas that feel like Miguel talking to a friend. Short, punchy, natural. Allow real emotion.
 
-**4. LINKEDIN TONE:**
-    * Serious but human. Clear and mature.
-    * Focus on metrics, real performance data, training reflections.
-    * NO exaggerated humor. NO persona lines.
-    * Professional language that would impress a coach or sports director.
+══════════════════════════════════════════════
+**FORMAT MODE: {{{format}}}**
+══════════════════════════════════════════════
+
+{{#if (eq format "Serie")}}
+**SERIES MODE — Generate episodic ideas with progression and continuity.**
+
+* **Series Name:** {{#if seriesName}}"{{{seriesName}}}"{{else}}Invent a short, catchy name for the series.{{/if}}
+* **Series Goal:** {{#if seriesGoal}}{{{seriesGoal}}}{{else}}Infer a goal from the content type.{{/if}}
+* **Starting Episode:** {{#if episodeNumber}}Start from Episode {{episodeNumber}}.{{else}}Start from Episode 1.{{/if}}
+* **Total:** {{#if totalEpisodes}}{{totalEpisodes}} episodes.{{/if}}{{#if totalDays}}{{totalDays}} days.{{/if}}
+* **Previous Episodes:** {{#if previousEpisodesSummary}}{{{previousEpisodesSummary}}}{{else}}No previous context.{{/if}}
+
+**SERIES RULES:**
+1. Each idea must be formatted as an EPISODE: "Episódio X: [idea description]" or "Dia X/Y: [idea description]".
+2. Ideas must show PROGRESSION — each episode should build on the previous one.
+3. If previousEpisodesSummary is provided, do NOT repeat what was already done.
+4. Each idea should include a progress element (new drill, harder variation, better metric).
+5. Ideas should create a narrative arc that keeps viewers coming back.
+
+{{else}}
+**STANDALONE MODE — Generate normal, individual ideas (not episodic).**
+{{/if}}
 
 **YOUR TASK:**
 
 Generate {{numberOfIdeas}} new, specific, and creative content ideas for the content type: **{{{contentType}}}**.
 
 **Constraints:**
-- **If 'Humor/Meme':** Suggest ideas where Miguel is relatable or playfully confident. Example: "POV: You scored a worldie but have no fans to celebrate with."
-- **If 'Skill/Treino':** Focus on ELITE execution. The idea must highlight speed, technique, or power.
-- **If 'Mindset/Rotina':** Focus on real feelings — the obsession, the sacrifice, the honest moments. Not guru speeches.
-- **If 'YouTube':** Suggest long-form content about the journey, match analysis, or full workout sessions.
-- **If 'LinkedIn':** Suggest professional content — performance metrics, training reflections, discipline stories, learnings. Things that would impress a sports professional.
+- **If 'Humor/Meme':** Suggest ideas where Miguel is relatable or playfully confident.
+- **If 'Skill/Treino':** Focus on ELITE execution. Speed, technique, or power.
+- **If 'Mindset/Rotina':** Focus on real feelings — the obsession, the sacrifice, honest moments.
+- **If 'YouTube':** Long-form content about the journey, match analysis, or full workout sessions.
+- **If 'LinkedIn':** Professional content — performance metrics, training reflections, discipline stories.
 
 Return ONLY a JSON object with an "ideas" property, which is an array of strings. Each string in the array should be a single, distinct idea. Do not add any other text or formatting.
 Generate in Portuguese Language!
