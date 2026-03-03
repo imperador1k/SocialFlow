@@ -193,6 +193,17 @@ export default function IdeasPage() {
     );
 }
 
+const BLUEPRINT_MARKER = '##BLUEPRINT##';
+
+function tryParseBlueprint(description: string): VideoBlueprint | null {
+    if (!description.startsWith(BLUEPRINT_MARKER)) return null;
+    try {
+        return JSON.parse(description.slice(BLUEPRINT_MARKER.length));
+    } catch {
+        return null;
+    }
+}
+
 function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit }: {
     idea: ContentIdea,
     onToggleFavorite: (id: string, isFavorite: boolean) => void,
@@ -200,21 +211,100 @@ function IdeaCard({ idea, onToggleFavorite, onToggleCompleted, onDelete, onEdit 
     onDelete: (id: string) => void,
     onEdit: (idea: ContentIdea) => void,
 }) {
+    const bp = tryParseBlueprint(idea.description);
+
     return (
         <Card className={`flex flex-col transition-all ${idea.isCompleted ? 'bg-muted/30' : 'bg-card'}`}>
-            <CardHeader>
+            <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex justify-between items-start">
-                    <div>
+                    <div className="flex gap-2 flex-wrap">
                         <Badge variant="secondary">{idea.contentType}</Badge>
+                        {bp?.isSeries && bp.seriesName && (
+                            <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/30" variant="outline">📺 {bp.seriesName}</Badge>
+                        )}
+                        {bp?.isSeries && bp.episodeLabel && (
+                            <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/30" variant="outline">{bp.episodeLabel}</Badge>
+                        )}
+                        {bp?.usePersonaLine && (
+                            <Badge className="bg-blue-500/10 text-blue-500" variant="outline">Persona</Badge>
+                        )}
+                        {bp?.useWasted && (
+                            <Badge className="bg-red-500/10 text-red-500" variant="outline">Wasted</Badge>
+                        )}
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onToggleFavorite(idea.id, idea.isFavorite)}>
                         <Star className={`h-5 w-5 ${idea.isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
                     </Button>
                 </CardTitle>
-                <CardDescription className={`flex-grow min-h-[40px] ${idea.isCompleted ? 'line-through' : ''}`}>
-                    {idea.description}
-                </CardDescription>
             </CardHeader>
+            <CardContent className={`flex-grow space-y-3 text-sm ${idea.isCompleted ? 'opacity-50' : ''}`}>
+                {bp ? (
+                    /* ── Rich Blueprint View ── */
+                    <>
+                        <h3 className="font-semibold text-base">{bp.title}</h3>
+                        <p className="text-muted-foreground text-xs">{bp.idea}</p>
+
+                        <div className="bg-primary/5 p-2.5 rounded-md border border-primary/20">
+                            <p className="text-xs font-medium text-primary mb-0.5">🔥 Hook</p>
+                            <p className="font-medium text-sm">"{bp.hook}"</p>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-0.5">📝 Guião</p>
+                            <p className="leading-relaxed whitespace-pre-wrap text-xs">{bp.script}</p>
+                        </div>
+
+                        {bp.shotList && bp.shotList.length > 0 && (
+                            <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-0.5">🎬 Shot List</p>
+                                <ul className="list-disc pl-4 space-y-0.5 text-xs text-muted-foreground">
+                                    {bp.shotList.map((shot, i) => <li key={i}>{shot}</li>)}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="bg-muted/30 p-2 rounded-md border border-muted">
+                            <p className="text-xs font-medium text-muted-foreground mb-0.5">📣 CTA</p>
+                            <p className="italic text-xs">"{bp.cta}"</p>
+                        </div>
+
+                        {bp.usePersonaLine && bp.personaLine && (
+                            <div className="flex items-center gap-1.5 text-xs text-blue-500">
+                                <span className="font-medium">💬 Persona:</span>
+                                <span className="italic">"{bp.personaLine}"</span>
+                            </div>
+                        )}
+
+                        {bp.useWasted && bp.wastedReason && (
+                            <div className="flex items-center gap-1.5 text-xs text-red-500">
+                                <span className="font-medium">💀 Wasted:</span>
+                                <span>{bp.wastedReason}</span>
+                            </div>
+                        )}
+
+                        {bp.isSeries && (bp.continuityLine || bp.nextEpisodeSuggestion) && (
+                            <div className="bg-purple-500/5 p-2 rounded-md border border-purple-500/20 space-y-1">
+                                <p className="text-xs font-medium text-purple-500">📺 Série</p>
+                                {bp.continuityLine && <p className="text-xs italic">"{bp.continuityLine}"</p>}
+                                {bp.nextEpisodeSuggestion && <p className="text-xs text-muted-foreground">💡 Próximo: {bp.nextEpisodeSuggestion}</p>}
+                            </div>
+                        )}
+
+                        {bp.hashtags && bp.hashtags.length > 0 && (
+                            <div className="flex gap-1 flex-wrap">
+                                {bp.hashtags.map((tag, i) => (
+                                    <span key={i} className="text-xs text-primary/70">#{tag}</span>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    /* ── Plain Text View (normal ideas) ── */
+                    <p className={`min-h-[40px] ${idea.isCompleted ? 'line-through' : ''}`}>
+                        {idea.description}
+                    </p>
+                )}
+            </CardContent>
             <CardFooter className="flex justify-between items-center mt-auto pt-4 border-t">
                 <div className="flex items-center space-x-2">
                     <Switch id={`completed-${idea.id}`} checked={idea.isCompleted} onCheckedChange={() => onToggleCompleted(idea.id, idea.isCompleted)} />
@@ -617,14 +707,9 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
     };
 
     const handleSaveBlueprintAsIdea = (bp: VideoBlueprint) => {
-        let fullDesc = `[${bp.title}]\nHook: ${bp.hook}\nIdea: ${bp.idea}\n\nGuião:\n${bp.script}`;
-        if (bp.isSeries && bp.seriesName) {
-            fullDesc = `[📺 ${bp.seriesName} — ${bp.episodeLabel}]\nHook: ${bp.hook}\nIdea: ${bp.idea}\n\nGuião:\n${bp.script}`;
-            if (bp.continuityLine) fullDesc += `\n\n🔗 Continuidade: ${bp.continuityLine}`;
-            if (bp.nextEpisodeSuggestion) fullDesc += `\n💡 Próximo: ${bp.nextEpisodeSuggestion}`;
-        }
+        const description = BLUEPRINT_MARKER + JSON.stringify(bp);
         addIdea({
-            description: fullDesc,
+            description,
             videoLink: '',
             contentType: bp.contentType,
             isFavorite: false,
