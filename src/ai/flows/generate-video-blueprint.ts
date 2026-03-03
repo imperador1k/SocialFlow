@@ -148,11 +148,13 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
 * **NEVER** use CTAs that sound like selling.
 
 ══════════════════════════════════════════════
-**7. SERIES MODE (format = "Serie")**
+**7. SERIES MODE (format = "{{{format}}}")**
 ══════════════════════════════════════════════
 
-{{#if (eq format "Serie")}}
-**THIS IS A SERIES EPISODE. Follow these rules strictly:**
+**If format is "Serie", follow the SERIES rules below. If format is "Avulso", follow the STANDALONE rules.**
+
+**SERIES RULES (only if format = "Serie"):**
+THIS IS A SERIES EPISODE. Follow these rules strictly:
 
 * **Series Name:** {{#if seriesName}}"{{{seriesName}}}"{{else}}Invent a short, catchy, memorable series name (max 5 words). It should work as a recurring title.{{/if}}
 * **Series Goal:** {{#if seriesGoal}}{{{seriesGoal}}}{{else}}Infer a goal from the content type and context.{{/if}}
@@ -160,7 +162,7 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
 * **Total Episodes/Days:** {{#if totalEpisodes}}Total: {{totalEpisodes}} episodes.{{/if}}{{#if totalDays}}Total: {{totalDays}} days.{{/if}}
 * **Previous Episodes Summary:** {{#if previousEpisodesSummary}}{{{previousEpisodesSummary}}}{{else}}No previous context — this is the first episode or standalone.{{/if}}
 
-**SERIES CONTENT RULES:**
+**SERIES CONTENT RULES (only if format = "Serie"):**
 1. The output MUST clearly be an EPISODE — not a random standalone video.
 2. The title must include the episode label (e.g. "Dia 3/30 — Pé Fraco").
 3. If previousEpisodesSummary is provided:
@@ -175,10 +177,8 @@ Miguel's objective is to be hired by a professional club ({{objective}}).
 6. The \`nextEpisodeSuggestion\` should be a concrete 1-line idea for what comes next.
 7. Set \`isSeries\` to true, fill \`seriesName\`, \`episodeLabel\`, \`continuityLine\`, and \`nextEpisodeSuggestion\`.
 
-{{else}}
-**This is a STANDALONE video (format = "Avulso").**
-Set \`isSeries\` to false. Set \`seriesName\`, \`episodeLabel\`, \`continuityLine\`, and \`nextEpisodeSuggestion\` to null.
-{{/if}}
+**STANDALONE RULES (only if format = "Avulso"):**
+This is a standalone video. Set \`isSeries\` to false. Set \`seriesName\`, \`episodeLabel\`, \`continuityLine\`, and \`nextEpisodeSuggestion\` to null.
 
 ══════════════════════════════════════════════
 

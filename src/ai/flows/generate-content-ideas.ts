@@ -89,8 +89,10 @@ const generateContentIdeasPrompt = ai.definePrompt({
 **FORMAT MODE: {{{format}}}**
 ══════════════════════════════════════════════
 
-{{#if (eq format "Serie")}}
-**SERIES MODE — Generate episodic ideas with progression and continuity.**
+**If format is "Serie", follow SERIES MODE rules below. If format is "Avulso", follow STANDALONE MODE.**
+
+**SERIES MODE (only if format = "Serie"):**
+Generate episodic ideas with progression and continuity.
 
 * **Series Name:** {{#if seriesName}}"{{{seriesName}}}"{{else}}Invent a short, catchy name for the series.{{/if}}
 * **Series Goal:** {{#if seriesGoal}}{{{seriesGoal}}}{{else}}Infer a goal from the content type.{{/if}}
@@ -98,16 +100,15 @@ const generateContentIdeasPrompt = ai.definePrompt({
 * **Total:** {{#if totalEpisodes}}{{totalEpisodes}} episodes.{{/if}}{{#if totalDays}}{{totalDays}} days.{{/if}}
 * **Previous Episodes:** {{#if previousEpisodesSummary}}{{{previousEpisodesSummary}}}{{else}}No previous context.{{/if}}
 
-**SERIES RULES:**
+**SERIES RULES (only if format = "Serie"):**
 1. Each idea must be formatted as an EPISODE: "Episódio X: [idea description]" or "Dia X/Y: [idea description]".
 2. Ideas must show PROGRESSION — each episode should build on the previous one.
 3. If previousEpisodesSummary is provided, do NOT repeat what was already done.
 4. Each idea should include a progress element (new drill, harder variation, better metric).
 5. Ideas should create a narrative arc that keeps viewers coming back.
 
-{{else}}
-**STANDALONE MODE — Generate normal, individual ideas (not episodic).**
-{{/if}}
+**STANDALONE MODE (only if format = "Avulso"):**
+Generate normal, individual ideas (not episodic). No series formatting needed.
 
 **YOUR TASK:**
 
