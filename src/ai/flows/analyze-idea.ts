@@ -6,7 +6,7 @@ import { z } from 'genkit';
 const AnalyzeIdeaInputSchema = z.object({
     description: z.string().describe('The idea description provided by the user.'),
     contentType: z
-        .enum(['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'])
+        .enum(['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube', 'LinkedIn'])
         .describe('The content type of the idea.'),
 });
 
@@ -18,7 +18,7 @@ const AnalyzeIdeaOutputSchema = z.object({
     strengths: z.array(z.string()).describe('What is good about this idea (1-3 points).'),
     improvements: z.array(z.string()).describe('Suggestions to make it better (1-3 points).'),
     brandFit: z.string().describe('How well it fits Miguel brand and niche. 1-2 sentences.'),
-    suggestedHook: z.string().describe('A suggested hook starting with "Saudações meus caros..." if the idea has potential.'),
+    suggestedHook: z.string().describe('A suggested hook starting with "Saudações meus caros..." if the idea has potential. For LinkedIn, skip "Saudações meus caros" and use a professional opening instead.'),
 });
 
 export type AnalyzeIdeaOutput = z.infer<typeof AnalyzeIdeaOutputSchema>;
@@ -35,15 +35,31 @@ const analyzeIdeaPrompt = ai.definePrompt({
 
 **MIGUEL'S BRAND:**
 * **Name:** MIGUEL.
-* **Goal:** Get hired by a professional club. He must ALWAYS look like a serious, skilled player.
-* **Vibe:** "The Charismatic Underdog". Skilled, obsessed with training, fun personality.
-* **Greeting:** "Saudações meus caros..." (always starts with this).
-* **Persona:** "Irmão do Lamine Yamal" (used selectively for humor).
+* **Goal:** Get a professional contract as a football player. He must ALWAYS look like a serious, skilled player.
+* **Vibe:** Young, ambitious, obsessed, but real. NOT a coach. NOT a motivational speaker. He's a PLAYER.
+* **Greeting:** "Saudações meus caros..." (used on TikTok/Instagram, NOT on LinkedIn).
+* **Persona:** "Irmão do Lamine Yamal" — use ONLY when it makes sense. Not obligatory. Never compromise credibility.
 * **Content Pillars:**
-  - Humor/Meme (40%): Relatability & Charisma. Humor from the free agent struggle, NOT from failing skills.
-  - Skill/Treino (35%): Proof of competence for scouts. Elite execution.
-  - Mindset/Rotina (25%): Inspiration & Discipline. The grind.
+  - Skills/Highlights (50%): The product. Proof he's elite.
+  - Mindset/Rotina (30%): Emotional connection. Discipline.
+  - Humor/Meme (20%): Reach and virality. Relatable.
   - YouTube: Long-form journey content.
+  - LinkedIn: Professional positioning — serious tone, real metrics, attract coaches/directors.
+
+**LINKEDIN-SPECIFIC RULES (when contentType is LinkedIn):**
+* Serious but human tone — NOT corporate, NOT stiff.
+* NO "Irmão do Lamine Yamal" persona.
+* NO "Wasted" effect.
+* NO exaggerated humor.
+* Focus on: performance data, training discipline, real learnings, professional growth.
+* Language: clear, mature, honest.
+* The hook should be a professional opening, NOT "Saudações meus caros".
+
+**TONE GUIDELINES (ALL PLATFORMS):**
+* Write as if Miguel is talking to a friend while filming himself.
+* Avoid corporate tone. Avoid guru/coach speech.
+* Short, natural sentences. Real emotion.
+* Miguel is a player, not an influencer or motivational speaker.
 
 **THE IDEA TO ANALYZE:**
 * **Content Type:** {{{contentType}}}
@@ -56,7 +72,7 @@ Evaluate this idea honestly:
 3. **Strengths:** What works well (1-3 bullet points).
 4. **Improvements:** What could be better (1-3 bullet points). Be specific and actionable.
 5. **Brand Fit:** Does it align with Miguel's brand? Would a scout see this positively?
-6. **Suggested Hook:** Write a hook starting with "Saudações meus caros..." that could work for this idea.
+6. **Suggested Hook:** Write a hook that could work for this idea. For LinkedIn, use a professional opening. For other platforms, start with "Saudações meus caros...".
 
 Respond in Portuguese (PT-PT). Be direct, honest, and constructive.
 Return ONLY a JSON object.

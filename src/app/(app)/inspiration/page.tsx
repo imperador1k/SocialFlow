@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import type { Creator, ContentType } from '@/lib/types';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +19,7 @@ import {
     DialogTrigger,
     DialogFooter,
     DialogClose
-  } from '@/components/ui/dialog';
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,7 +31,7 @@ import { collection, serverTimestamp, query, orderBy, doc } from 'firebase/fires
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
-const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'];
+const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube', 'LinkedIn'];
 
 export default function InspirationPage() {
     const [filter, setFilter] = useState<ContentType | 'All'>('All');
@@ -54,13 +54,13 @@ export default function InspirationPage() {
 
 
     const addCreator = (newCreator: Omit<Creator, 'id' | 'createdAt'>) => {
-        if(creatorsCollection) {
-            addDocumentNonBlocking(creatorsCollection, {...newCreator, createdAt: serverTimestamp()});
+        if (creatorsCollection) {
+            addDocumentNonBlocking(creatorsCollection, { ...newCreator, createdAt: serverTimestamp() });
             setAddDialogOpen(false);
         }
     }
     const deleteCreator = (id: string) => {
-        if(!user) return;
+        if (!user) return;
         const creatorDoc = doc(firestore, `users/${user.uid}/creators`, id);
         deleteDocumentNonBlocking(creatorDoc);
     }
@@ -74,7 +74,7 @@ export default function InspirationPage() {
                     <h1 className="text-2xl font-bold tracking-tight">Inspiração de Criadores</h1>
                     <p className="text-muted-foreground">Gerencie sua lista de criadores inspiradores.</p>
                 </div>
-                 <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+                <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button disabled={!user}>
                             <UserPlus className="mr-2 h-4 w-4" /> Adicionar Criador
@@ -96,14 +96,14 @@ export default function InspirationPage() {
                     </Tabs>
                 </CardHeader>
                 <CardContent>
-                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {isLoading && <p>A carregar criadores...</p>}
                         {!isLoading && filteredCreators.length > 0 ? (
                             filteredCreators.map((creator) => (
-                                <CreatorCard key={creator.id} creator={creator} onDelete={deleteCreator}/>
+                                <CreatorCard key={creator.id} creator={creator} onDelete={deleteCreator} />
                             ))
                         ) : !isLoading && (
-                             <div className="text-center py-12 text-muted-foreground col-span-full">
+                            <div className="text-center py-12 text-muted-foreground col-span-full">
                                 <p>Nenhum criador encontrado para esta categoria.</p>
                             </div>
                         )}
@@ -130,7 +130,7 @@ function CreatorCard({ creator, onDelete }: { creator: Creator, onDelete: (id: s
                 <CardDescription>{creator.category}</CardDescription>
             </CardHeader>
             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 text-destructive/70 hover:text-destructive bg-card/50 hover:bg-card/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(creator.id)}>
-                <Trash2 className="h-4 w-4"/>
+                <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Excluir criador</span>
             </Button>
         </Card>
@@ -142,7 +142,7 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
     const [photoUrl, setPhotoUrl] = useState('');
     const [socialLink, setSocialLink] = useState('');
     const [category, setCategory] = useState<ContentType | ''>('');
-    
+
     const handleSubmit = () => {
         if (name && photoUrl && socialLink && category) {
             onAddCreator({ name, photoUrl, socialLink, category });
@@ -154,7 +154,7 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
     }
 
     return (
-         <DialogContent>
+        <DialogContent>
             <DialogHeader>
                 <DialogTitle>Adicionar Novo Criador</DialogTitle>
             </DialogHeader>
@@ -163,11 +163,11 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
                     <Label htmlFor="name">Nome</Label>
                     <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Nome do criador" />
                 </div>
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="photoUrl">URL da Foto</Label>
                     <Input id="photoUrl" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
                 </div>
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="socialLink">Link Social</Label>
                     <Input id="socialLink" value={socialLink} onChange={e => setSocialLink(e.target.value)} placeholder="https://youtube.com/..." />
                 </div>
@@ -178,7 +178,7 @@ function AddCreatorDialog({ onAddCreator }: { onAddCreator: (creator: Omit<Creat
                             <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                             {contentTypes.map((type) => (
+                            {contentTypes.map((type) => (
                                 <SelectItem key={type} value={type}>{type}</SelectItem>
                             ))}
                         </SelectContent>

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -20,7 +19,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Pie, PieChart, Cell } from 'recharts';
-import { Lightbulb, Loader2, Sparkles, Layers, Crosshair, Megaphone, Target, Bot, Zap, TrendingUp, Handshake, BrainCircuit, Rocket, Film, Repeat, Swords, Wind, Award } from 'lucide-react';
+import { Lightbulb, Loader2, Sparkles, Layers, Crosshair, Megaphone, Target, Bot, Zap, TrendingUp, Handshake, BrainCircuit, Rocket, Film, Repeat, Swords, Wind, Award, Briefcase, CalendarClock, ListChecks, BarChart3, PlayCircle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -29,25 +28,34 @@ import { generateEngagementContent } from '@/ai/flows/generate-engagement-conten
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
+/* ══════════════════════════════════════════════
+   DATA – Mix de Conteúdo (50/30/20)
+   ══════════════════════════════════════════════ */
 const distributionData = [
-  { type: 'Humor/Memes', value: 20, fill: 'var(--color-humor)' },
   { type: 'Skills/Highlights', value: 50, fill: 'var(--color-skills)' },
   { type: 'Mindset/Rotina', value: 30, fill: 'var(--color-mindset)' },
+  { type: 'Humor/Memes', value: 20, fill: 'var(--color-humor)' },
 ];
 
 const chartConfig = {
-  humor: { label: 'Humor/Memes (20%)', color: 'hsl(var(--chart-1))' },
   skills: { label: 'Skills/Highlights (50%)', color: 'hsl(var(--chart-2))' },
   mindset: { label: 'Mindset/Rotina (30%)', color: 'hsl(var(--chart-3))' },
+  humor: { label: 'Humor/Memes (20%)', color: 'hsl(var(--chart-1))' },
 };
 
+/* ══════════════════════════════════════════════
+   DATA – Calendário de Publicação
+   ══════════════════════════════════════════════ */
 const publishingSchedule = [
-  { platform: 'Instagram', frequency: '4-5x a week', times: '9am, 12pm, 5pm' },
-  { platform: 'TikTok', frequency: '4-5x a day', times: '7am, 11am, 4pm, 8pm' },
-  { platform: 'YouTube', frequency: '2x a week', times: 'Wednesday 3pm' },
-  { platform: 'LinkedIn', frequency: '2x a week', times: 'Weekends' },
+  { platform: 'TikTok', frequency: '4-5 vídeos/dia', days: 'Terça a Domingo', recommendation: 'Manhã, almoço, fim de tarde, noite' },
+  { platform: 'Instagram', frequency: '4-5 vídeos/dia', days: 'Terça a Domingo', recommendation: 'Mesmo conteúdo TikTok, adaptado' },
+  { platform: 'YouTube', frequency: '1-2 vídeos/semana', days: 'Produção à Segunda', recommendation: 'Vídeos longos, documentário/vlog' },
+  { platform: 'LinkedIn', frequency: '2-3 vídeos/semana', days: 'Dias úteis', recommendation: 'Tom profissional, sem humor' },
 ];
 
+/* ══════════════════════════════════════════════
+   DATA – Hooks & CTAs
+   ══════════════════════════════════════════════ */
 const initialCtaExamples = [
   'Dá like se concordas!',
   'Comenta a tua opinião abaixo.',
@@ -66,6 +74,9 @@ const initialHookExamples = [
   'Este truque vai mudar a tua [tarefa].',
 ];
 
+/* ══════════════════════════════════════════════
+   COMPONENT – AI Engagement Booster
+   ══════════════════════════════════════════════ */
 function AIEngagementBoosterCard({
   onHooksGenerated,
   onCtasGenerated,
@@ -141,6 +152,9 @@ function AIEngagementBoosterCard({
   );
 }
 
+/* ══════════════════════════════════════════════
+   TAB – Estratégia
+   ══════════════════════════════════════════════ */
 function StrategyTabContent() {
   const [hookExamples, setHookExamples] = useState(initialHookExamples);
   const [ctaExamples, setCtaExamples] = useState(initialCtaExamples);
@@ -155,28 +169,35 @@ function StrategyTabContent() {
 
   return (
     <div className="space-y-6 mt-6">
+
+      {/* ───────── Mix de Conteúdo (50/30/20) ───────── */}
       <Card>
         <CardHeader>
           <CardTitle>Estratégia de Distribuição de Conteúdo</CardTitle>
-          <CardDescription>Uma abordagem equilibrada para engajar seu público de forma eficaz.</CardDescription>
+          <CardDescription>Uma abordagem equilibrada para engajar o público de forma eficaz.</CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-6">
-          <div className="flex flex-col justify-center">
-            <p className="text-muted-foreground mb-2">Mix Ideal:</p>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-1))]"></div>
-                {chartConfig.humor.label}
-              </li>
+          <div className="flex flex-col justify-center space-y-4">
+            <p className="text-muted-foreground mb-1">Mix Ideal:</p>
+            <ul className="space-y-3">
               <li className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-2))]"></div>
-                {chartConfig.skills.label}
+                <span className="font-medium">{chartConfig.skills.label}</span>
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-3))]"></div>
-                {chartConfig.mindset.label}
+                <span className="font-medium">{chartConfig.mindset.label}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-1))]"></div>
+                <span className="font-medium">{chartConfig.humor.label}</span>
               </li>
             </ul>
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 text-sm space-y-1">
+              <p><strong>⚽ Skill</strong> é o <em>produto</em> — mostra que és craque.</p>
+              <p><strong>😂 Humor</strong> é o <em>alcance</em> — leva o conteúdo a novas pessoas.</p>
+              <p><strong>🧠 Mindset</strong> cria <em>ligação emocional</em> — faz as pessoas ficarem.</p>
+            </div>
           </div>
           <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
             <PieChart>
@@ -191,18 +212,22 @@ function StrategyTabContent() {
         </CardContent>
       </Card>
 
+      {/* ───────── Calendário de Publicação ───────── */}
       <Card>
         <CardHeader>
-          <CardTitle>Calendário de Publicação</CardTitle>
-          <CardDescription>Frequências e horários ideais para as principais plataformas.</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarClock className="w-5 h-5 text-primary" /> Calendário de Publicação
+          </CardTitle>
+          <CardDescription>Frequências e recomendações gerais por plataforma. Sem horários fixos — adaptar ao dia.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Plataforma</TableHead>
                 <TableHead>Frequência</TableHead>
-                <TableHead>Melhores Horários (Local)</TableHead>
+                <TableHead>Dias</TableHead>
+                <TableHead>Recomendação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -210,16 +235,153 @@ function StrategyTabContent() {
                 <TableRow key={item.platform}>
                   <TableCell className="font-medium">{item.platform}</TableCell>
                   <TableCell>{item.frequency}</TableCell>
-                  <TableCell>{item.times}</TableCell>
+                  <TableCell>{item.days}</TableCell>
+                  <TableCell className="text-muted-foreground">{item.recommendation}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+
+          {/* Segunda-feira – Nota Estratégica */}
+          <Card className="border-primary/40 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ListChecks className="w-4 h-4 text-primary" /> Segunda-feira — Dia Interno de Produção
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                Não se publicam vídeos curtos à segunda-feira. É o dia estratégico:
+              </p>
+              <ul className="grid sm:grid-cols-2 gap-2 text-sm">
+                <li className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">📋 Planeamento semanal de conteúdo</li>
+                <li className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">🎬 Gravação em batch (múltiplos vídeos)</li>
+                <li className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">📊 Análise de métricas da semana anterior</li>
+                <li className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">🎥 Gravação de vídeo longo para YouTube</li>
+              </ul>
+            </CardContent>
+          </Card>
         </CardContent>
       </Card>
-      
-      <AIEngagementBoosterCard onHooksGenerated={addHooks} onCtasGenerated={addCtas} />
 
+      {/* ───────── Séries Contínuas ───────── */}
+      <Card className="border-primary/50 bg-gradient-to-br from-card to-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PlayCircle className="w-5 h-5 text-primary" /> Séries Contínuas (Narrativa de Crescimento)
+          </CardTitle>
+          <CardDescription>
+            Pelo menos 1 vídeo por dia deve fazer parte de uma série. Objetivo: criar retenção, expectativa e fazer o espectador voltar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="bg-muted/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex justify-between">
+                  <span>📅 "Dia X até assinar contrato"</span>
+                  <Badge>Skill</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Documenta a jornada diária com contagem crescente. Cada dia é um episódio — treino, progresso, sacrifício.</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex justify-between">
+                  <span>🦶 "30 dias a melhorar o pé fraco"</span>
+                  <Badge variant="secondary">Skill</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Série de progresso técnico com comparação visual. Mostra Dia 1 vs Dia 15 vs Dia 30.</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex justify-between">
+                  <span>🏠 "Vida de free agent"</span>
+                  <Badge variant="outline">Humor / Mindset</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Situações reais e cómicas de ser jogador sem clube — treinar sozinho, comer em tupperware, etc.</p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/50 text-sm">
+            <p className="font-medium mb-1">💡 As séries podem cruzar categorias:</p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li><strong>Skill:</strong> Progresso técnico visível (drills, testes físicos, evolução).</li>
+              <li><strong>Mindset:</strong> Disciplina e sacrifício diário (rotina, motivação).</li>
+              <li><strong>Humor:</strong> Problemas cómicos de ser free agent ou "irmão do Yamal".</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ───────── LinkedIn – Posicionamento Profissional ───────── */}
+      <Card className="border-blue-500/40 bg-gradient-to-br from-card to-blue-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-blue-500" /> LinkedIn — Posicionamento Profissional
+          </CardTitle>
+          <CardDescription>
+            Atrair treinadores, dirigentes e profissionais da área. Mostrar disciplina, métricas reais e mentalidade.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Regras */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <ListChecks className="w-4 h-4" /> Regras de Conteúdo
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2 p-2 bg-green-500/10 rounded-md">✅ Tom sério e profissional</li>
+                <li className="flex items-center gap-2 p-2 bg-green-500/10 rounded-md">✅ Dados de performance (tempos, distâncias, cargas)</li>
+                <li className="flex items-center gap-2 p-2 bg-green-500/10 rounded-md">✅ Reflexões curtas sobre disciplina</li>
+                <li className="flex items-center gap-2 p-2 bg-green-500/10 rounded-md">✅ Bastidores reais de treino</li>
+                <li className="flex items-center gap-2 p-2 bg-green-500/10 rounded-md">✅ Aprendizagens e evolução</li>
+              </ul>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md">❌ Sem humor exagerado</li>
+                <li className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md">❌ Sem "Wasted"</li>
+                <li className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md">❌ Sem foco na persona "Irmão do Lamine Yamal"</li>
+              </ul>
+            </div>
+            {/* Formato */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" /> Formato Recomendado
+              </h4>
+              <div className="space-y-3">
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-4">
+                    <p className="text-sm font-medium mb-1">📹 Vídeos curtos (30-60s)</p>
+                    <p className="text-sm text-muted-foreground">Direto ao ponto. Sem edição exagerada. Foco no conteúdo real.</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-4">
+                    <p className="text-sm font-medium mb-1">📝 Texto profissional na descrição</p>
+                    <p className="text-sm text-muted-foreground">Linguagem clara, madura. Descrever o que está a ser mostrado com dados concretos.</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-4">
+                    <p className="text-sm font-medium mb-1">🎯 Exemplo de post</p>
+                    <p className="text-sm text-muted-foreground italic">"Sprint de 40m em 4.8s. Há 3 meses fazia em 5.3s. Os números não mentem — consistência é tudo."</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ───────── Viralização & Algoritmo ───────── */}
       <Card className="border-primary/50 bg-primary/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -258,6 +420,10 @@ function StrategyTabContent() {
         </CardContent>
       </Card>
 
+      {/* ───────── AI Engagement Booster ───────── */}
+      <AIEngagementBoosterCard onHooksGenerated={addHooks} onCtasGenerated={addCtas} />
+
+      {/* ───────── Kit de Ferramentas de Engajamento ───────── */}
       <Card>
         <CardHeader>
           <CardTitle>Kit de Ferramentas de Engajamento</CardTitle>
@@ -295,12 +461,15 @@ function StrategyTabContent() {
 }
 
 
+/* ══════════════════════════════════════════════
+   TAB – Plano de Conteúdo
+   ══════════════════════════════════════════════ */
 function ContentPlanTab() {
-  const [activeTikTokTab, setActiveTikTokTab] = useState('plano-humor');
+  const [activeTikTokTab, setActiveTikTokTab] = useState('plano-skills');
 
   return (
     <div className="space-y-8 mt-6">
-      
+
       {/* Key Strategies */}
       <section>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Estratégias Chave</h2>
@@ -347,7 +516,7 @@ function ContentPlanTab() {
                 <li>"Segue para veres o progresso nos próximos 90 dias."</li>
                 <li>"Se isto te inspirou, comenta um 💪 e partilha com alguém que precisa."</li>
                 <li>"Acompanha o meu desafio até conseguir entrar num clube."</li>
-                <li>"Se quiseres o treino completo comenta ‘🔥’ que eu partilho"</li>
+                <li>"Se quiseres o treino completo comenta '🔥' que eu partilho"</li>
               </ul>
             </CardContent>
           </Card>
@@ -379,112 +548,112 @@ function ContentPlanTab() {
       <section>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Plano para TikTok & Instagram Reels</h2>
         <Tabs value={activeTikTokTab} onValueChange={setActiveTikTokTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="plano-humor">🎭 Humor & Memes (40%)</TabsTrigger>
-                <TabsTrigger value="plano-skills">⚽️ Skills & Highlights (35%)</TabsTrigger>
-                <TabsTrigger value="plano-mindset">📈 Mindset & Rotina (25%)</TabsTrigger>
-            </TabsList>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="plano-skills">⚽️ Skills/Highlights (50%)</TabsTrigger>
+            <TabsTrigger value="plano-mindset">📈 Mindset/Rotina (30%)</TabsTrigger>
+            <TabsTrigger value="plano-humor">🎭 Humor/Memes (20%)</TabsTrigger>
+          </TabsList>
 
-            {/* Humor Tab */}
-            <TabsContent value="plano-humor">
-                <Card className="mt-4">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Rocket/> Objetivo Estratégico</CardTitle>
-                        <CardDescription><strong>Viralidade, partilhas e comentários.</strong> Humor simples, universal e ligado ao futebol.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base flex justify-between"><span>👨‍👦 "Irmão do Lamine Yamal"</span><Badge variant="secondary">Série</Badge></CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm"><strong>🎬 Hook:</strong> "Saudações Meus Caros, eu sou o irmão do Lamine Yamal…"</p>
-                                <p className="text-sm"><strong>📹 Execução:</strong> O Humor deve ser "Relatable": Coisas que só quem joga entende (ex: a dor de levar uma bolada na coxa num dia de frio, o tipo que nunca passa a bola) → termina com "Wasted" ou "Missão Falhada".</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base flex justify-between"><span>📅 "Dia X até Y"</span><Badge variant="secondary">Viral</Badge></CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm"><strong>🎬 Hook:</strong> Texto gigante "Dia 1 a treinar como o CR7 até o Sporting me chamar"</p>
-                                <p className="text-sm"><strong>📹 Execução:</strong> Cortes rápidos de treino, refeição, banho frio, abdominais → final com take cómico.</p>
-                                <p className="text-sm"><strong>💬 CTA:</strong> "Dia X — marquem o Sporting 👀⚽ Mais conteúdo longo no YouTube (link na bio)."</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base flex justify-between"><span>💀 "Erro Épico"</span><Badge variant="secondary">Engajamento</Badge></CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                               <p className="text-sm"><strong>🎬 Exemplo:</strong> POV: You scored a worldie but have no fans to celebrate with.</p>
-                            </CardContent>
-                        </Card>
-                    </CardContent>
+          {/* Skills Tab */}
+          <TabsContent value="plano-skills">
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award /> Objetivo Estratégico</CardTitle>
+                <CardDescription><strong>Autoridade técnica + mostrar que não és só humor, és craque.</strong></CardDescription>
+              </CardHeader>
+              <CardContent className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🏃‍♂️ Treino do Irmão do Yamal</span><Badge variant="secondary">Série</Badge></CardTitle></CardHeader>
+                  <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Circuito com cones, sprint e finalização — música hype.</p></CardContent>
                 </Card>
-            </TabsContent>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🎯 Mostrar Resultados</span><Badge variant="secondary">Desafio</Badge></CardTitle></CardHeader>
+                  <CardContent><p className="text-sm"><strong>💬 Execução:</strong> Filma-te a fazer testes físicos. Qual é o teu tempo nos 100m? Quantos km corres num jogo?</p></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🦶 Evolução do Pé Fraco</span><Badge variant="secondary">Progresso</Badge></CardTitle></CardHeader>
+                  <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Mostras drills → com texto: "Dia 10 vs Dia 1".</p></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🔥 Combo Perfeito</span><Badge variant="secondary">Hype</Badge></CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="text-sm"><strong>📹 Execução:</strong> Skill → explosão → finalização.</p>
+                    <p className="text-sm"><strong>💬 Texto hype:</strong> "Isto é treino de jogador obcecado."</p>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Skills Tab */}
-            <TabsContent value="plano-skills">
-                <Card className="mt-4">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Award /> Objetivo Estratégico</CardTitle>
-                        <CardDescription><strong>Autoridade técnica + mostrar que não és só humor, és craque.</strong></CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
-                        <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🏃‍♂️ Treino do Irmão do Yamal</span><Badge variant="secondary">Série</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Circuito com cones, sprint e finalização — música hype.</p></CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🎯 Mostrar Resultados</span><Badge variant="secondary">Desafio</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>💬 Execução:</strong> Filma-te a fazer testes físicos. Qual é o teu tempo nos 100m? Quantos km corres num jogo?</p></CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🦶 Evolução do Pé Fraco</span><Badge variant="secondary">Progresso</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Mostras drills → com texto: "Dia 10 vs Dia 1".</p></CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🔥 Combo Perfeito</span><Badge variant="secondary">Hype</Badge></CardTitle></CardHeader>
-                            <CardContent>
-                                <p className="text-sm"><strong>📹 Execução:</strong> Skill → explosão → finalização.</p>
-                                <p className="text-sm"><strong>💬 Texto hype:</strong> "Isto é treino de jogador obcecado."</p>
-                            </CardContent>
-                        </Card>
-                    </CardContent>
+          {/* Mindset Tab */}
+          <TabsContent value="plano-mindset">
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><BrainCircuit /> Objetivo Estratégico</CardTitle>
+                <CardDescription><strong>Criar ligação emocional, inspirar e mostrar disciplina.</strong></CardDescription>
+              </CardHeader>
+              <CardContent className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🌙 Realidade de Quem Sonha</span><Badge variant="secondary">Motivação</Badge></CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="text-sm"><strong>💬 Texto:</strong> "Enquanto eles dormem, eu treino."</p>
+                    <p className="text-sm"><strong>📹 Execução:</strong> Filmar noite ou cedo, música calma ou épica.</p>
+                  </CardContent>
                 </Card>
-            </TabsContent>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🛁 Rotina do Irmão do Yamal</span><Badge variant="secondary">Lifestyle</Badge></CardTitle></CardHeader>
+                  <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Mostrar pequenos hábitos: banho frio, comer simples, alongar → texto motivacional.</p></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>💪 Sem Desculpas</span><Badge variant="secondary">Disciplina</Badge></CardTitle></CardHeader>
+                  <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Treino com chuva, cansaço, pós-trabalho → mostrar sacrifício.</p></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex justify-between"><span>🎥 Falar para a Câmara</span><Badge variant="secondary">Conexão</Badge></CardTitle></CardHeader>
+                  <CardContent><p className="text-sm"><strong>📹 Execução:</strong> 15s de ti a dizer: "Não sou melhor que ninguém, mas não há ninguém mais obcecado do que eu."</p></CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Mindset Tab */}
-            <TabsContent value="plano-mindset">
-                <Card className="mt-4">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BrainCircuit /> Objetivo Estratégico</CardTitle>
-                        <CardDescription><strong>Criar ligação emocional, inspirar e mostrar disciplina.</strong></CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
-                         <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🌙 Realidade de Quem Sonha</span><Badge variant="secondary">Motivação</Badge></CardTitle></CardHeader>
-                            <CardContent>
-                                <p className="text-sm"><strong>💬 Texto:</strong> "Enquanto eles dormem, eu treino."</p>
-                                <p className="text-sm"><strong>📹 Execução:</strong> Filmar noite ou cedo, música calma ou épica.</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🛁 Rotina do Irmão do Yamal</span><Badge variant="secondary">Lifestyle</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Mostrar pequenos hábitos: banho frio, comer simples, alongar → texto motivacional.</p></CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>💪 Sem Desculpas</span><Badge variant="secondary">Disciplina</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> Treino com chuva, cansaço, pós-trabalho → mostrar sacrifício.</p></CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader><CardTitle className="text-base flex justify-between"><span>🎥 Falar para a Câmara</span><Badge variant="secondary">Conexão</Badge></CardTitle></CardHeader>
-                            <CardContent><p className="text-sm"><strong>📹 Execução:</strong> 15s de ti a dizer: "Não sou melhor que ninguém, mas não há ninguém mais obcecado do que eu."</p></CardContent>
-                        </Card>
-                    </CardContent>
+          {/* Humor Tab */}
+          <TabsContent value="plano-humor">
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Rocket /> Objetivo Estratégico</CardTitle>
+                <CardDescription><strong>Viralidade, partilhas e comentários.</strong> Humor simples, universal e ligado ao futebol.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex justify-between"><span>👨‍👦 "Irmão do Lamine Yamal"</span><Badge variant="secondary">Série</Badge></CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm"><strong>🎬 Hook:</strong> "Saudações Meus Caros, eu sou o irmão do Lamine Yamal…"</p>
+                    <p className="text-sm"><strong>📹 Execução:</strong> O Humor deve ser "Relatable": Coisas que só quem joga entende (ex: a dor de levar uma bolada na coxa num dia de frio, o tipo que nunca passa a bola) → termina com "Wasted" ou "Missão Falhada".</p>
+                  </CardContent>
                 </Card>
-            </TabsContent>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex justify-between"><span>📅 "Dia X até Y"</span><Badge variant="secondary">Viral</Badge></CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm"><strong>🎬 Hook:</strong> Texto gigante "Dia 1 a treinar como o CR7 até o Sporting me chamar"</p>
+                    <p className="text-sm"><strong>📹 Execução:</strong> Cortes rápidos de treino, refeição, banho frio, abdominais → final com take cómico.</p>
+                    <p className="text-sm"><strong>💬 CTA:</strong> "Dia X — marquem o Sporting 👀⚽ Mais conteúdo longo no YouTube (link na bio)."</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex justify-between"><span>💀 "Erro Épico"</span><Badge variant="secondary">Engajamento</Badge></CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm"><strong>🎬 Exemplo:</strong> POV: You scored a worldie but have no fans to celebrate with.</p>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </section>
 
@@ -492,28 +661,28 @@ function ContentPlanTab() {
       <section>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Plano para YouTube (Vídeos Longos)</h2>
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Film /> Objetivo</CardTitle>
-                <CardDescription>Mostrar a tua jornada como um filme — o sacrifício, a mentalidade, o treino e a disciplina. O foco é construir uma ligação profunda e duradoura com a audiência, que vai para além dos vídeos curtos.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <h3 className="font-semibold">Pilares de Conteúdo</h3>
-                <p className="text-sm text-muted-foreground">Os vídeos devem focar-se nestas categorias para criar uma marca pessoal forte e autêntica.</p>
-                <div className="grid md:grid-cols-3 gap-4">
-                    <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base">Rotina / Jornada do Herói</CardTitle></CardHeader>
-                        <CardContent><p className="text-sm"><strong>Tipo de Vídeos:</strong> "Um dia na minha vida", vlogs de treino, "como me preparo para...", desabafos sobre as dificuldades e vitórias. Mostra o processo, não apenas o resultado.</p></CardContent>
-                    </Card>
-                    <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base">Educação Gratuita</CardTitle></CardHeader>
-                        <CardContent><p className="text-sm"><strong>Tipo de Vídeos:</strong> Ensinar o que sabe sobre fitness, nutrição de atleta, exercícios específicos, como contar macros, etc. Posicionar-se como uma autoridade que ajuda a sua comunidade.</p></CardContent>
-                    </Card>
-                     <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base">Desenvolvimento Pessoal & Mentalidade</CardTitle></CardHeader>
-                        <CardContent><p className="text-sm"><strong>Tipo de Vídeos:</strong> Falar sobre como superar a falta de motivação, a importância da disciplina, e por que é que falhar é essencial para o crescimento. Vídeos com impacto emocional e verbal.</p></CardContent>
-                    </Card>
-                </div>
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Film /> Objetivo</CardTitle>
+            <CardDescription>Mostrar a tua jornada como um filme — o sacrifício, a mentalidade, o treino e a disciplina. O foco é construir uma ligação profunda e duradoura com a audiência, que vai para além dos vídeos curtos.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <h3 className="font-semibold">Pilares de Conteúdo</h3>
+            <p className="text-sm text-muted-foreground">Os vídeos devem focar-se nestas categorias para criar uma marca pessoal forte e autêntica.</p>
+            <div className="grid md:grid-cols-3 gap-4">
+              <Card className="bg-muted/50">
+                <CardHeader><CardTitle className="text-base">Rotina / Jornada do Herói</CardTitle></CardHeader>
+                <CardContent><p className="text-sm"><strong>Tipo de Vídeos:</strong> "Um dia na minha vida", vlogs de treino, "como me preparo para...", desabafos sobre as dificuldades e vitórias. Mostra o processo, não apenas o resultado.</p></CardContent>
+              </Card>
+              <Card className="bg-muted/50">
+                <CardHeader><CardTitle className="text-base">Educação Gratuita</CardTitle></CardHeader>
+                <CardContent><p className="text-sm"><strong>Tipo de Vídeos:</strong> Ensinar o que sabe sobre fitness, nutrição de atleta, exercícios específicos, como contar macros, etc. Posicionar-se como uma autoridade que ajuda a sua comunidade.</p></CardContent>
+              </Card>
+              <Card className="bg-muted/50">
+                <CardHeader><CardTitle className="text-base">Desenvolvimento Pessoal & Mentalidade</CardTitle></CardHeader>
+                <CardContent><p className="text-sm"><strong>Tipo de Vídeos:</strong> Falar sobre como superar a falta de motivação, a importância da disciplina, e por que é que falhar é essencial para o crescimento. Vídeos com impacto emocional e verbal.</p></CardContent>
+              </Card>
+            </div>
+          </CardContent>
         </Card>
       </section>
     </div>
@@ -521,28 +690,29 @@ function ContentPlanTab() {
 }
 
 
+/* ══════════════════════════════════════════════
+   PAGE – Strategy
+   ══════════════════════════════════════════════ */
 export default function StrategyPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Content Center</h1>
-                <p className="text-muted-foreground">O seu centro de comando para estratégia e planejamento de conteúdo.</p>
-            </div>
-            
-            <Tabs defaultValue="strategy" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="strategy">Estratégia</TabsTrigger>
-                    <TabsTrigger value="content">Plano de Conteúdo</TabsTrigger>
-                </TabsList>
-                <TabsContent value="strategy">
-                    <StrategyTabContent />
-                </TabsContent>
-                <TabsContent value="content">
-                    <ContentPlanTab />
-                </TabsContent>
-            </Tabs>
-        </div>
-    )
-}
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Content Center</h1>
+        <p className="text-muted-foreground">O seu centro de comando para estratégia e planejamento de conteúdo.</p>
+      </div>
 
-    
+      <Tabs defaultValue="strategy" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="strategy">Estratégia</TabsTrigger>
+          <TabsTrigger value="content">Plano de Conteúdo</TabsTrigger>
+        </TabsList>
+        <TabsContent value="strategy">
+          <StrategyTabContent />
+        </TabsContent>
+        <TabsContent value="content">
+          <ContentPlanTab />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}

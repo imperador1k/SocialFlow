@@ -53,7 +53,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, doc, serverTimestamp, query, orderBy, updateDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'];
+const contentTypes: ContentType[] = ['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube', 'LinkedIn'];
 type FilterType = ContentType | 'All' | 'Favorites';
 
 
@@ -577,7 +577,7 @@ function AIVideoBlueprintCard({ addIdea, disabled }: { addIdea: (idea: Omit<Cont
                                 <SelectValue placeholder="Selecione um tipo de conteúdo" />
                             </SelectTrigger>
                             <SelectContent>
-                                {['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'].map((type) => (
+                                {contentTypes.map((type) => (
                                     <SelectItem key={type} value={type}>{type}</SelectItem>
                                 ))}
                             </SelectContent>

@@ -7,7 +7,7 @@ export interface Task {
   createdAt?: Timestamp;
 }
 
-export type ContentType = "Humor/Meme" | "Skill/Treino" | "Mindset/Rotina" | "YouTube";
+export type ContentType = "Humor/Meme" | "Skill/Treino" | "Mindset/Rotina" | "YouTube" | "LinkedIn";
 
 export interface ContentIdea {
   id: string;
@@ -29,11 +29,11 @@ export interface Creator {
 }
 
 export interface CalendarEvent {
-    id: string;
-    title: string;
-    date: Date | Timestamp;
-    platform: 'Instagram' | 'TikTok' | 'YouTube';
-    contentType: ContentType;
+  id: string;
+  title: string;
+  date: Date | Timestamp;
+  platform: 'Instagram' | 'TikTok' | 'YouTube' | 'LinkedIn';
+  contentType: ContentType;
 }
 
 export interface UserProfile {

@@ -14,7 +14,7 @@ import { z } from 'genkit';
 
 const SuggestVideoIdeasInputSchema = z.object({
   contentType: z
-    .enum(['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube'])
+    .enum(['Humor/Meme', 'Skill/Treino', 'Mindset/Rotina', 'YouTube', 'LinkedIn'])
     .describe('The type of content to generate video ideas for.'),
   numberOfIdeas: z
     .number()
@@ -40,7 +40,19 @@ const suggestVideoIdeasPrompt = ai.definePrompt({
   name: 'suggestVideoIdeasPrompt',
   input: { schema: SuggestVideoIdeasInputSchema },
   output: { schema: SuggestVideoIdeasOutputSchema },
-  prompt: `You are a creative video content strategist. Generate {{numberOfIdeas}} video content ideas for {{{contentType}}} content. The ideas should be specific and actionable.
+  prompt: `You are a creative video content strategist for "Miguel", a football player trying to get a professional contract. He creates content on TikTok, Instagram, YouTube and LinkedIn.
+
+Generate {{numberOfIdeas}} video content ideas for {{{contentType}}} content.
+
+**Key rules:**
+- Miguel is a PLAYER, not a coach or influencer. Ideas should feel authentic and real.
+- Skills/Highlights (50%): Elite execution, proof of competence.
+- Mindset/Rotina (30%): Real emotions, discipline, the grind. Not guru speeches.
+- Humor/Meme (20%): Relatable football moments, free agent struggles. Natural humor.
+- YouTube: Long-form journey content, vlogs, full workouts.
+- LinkedIn: Professional tone. Performance data, discipline reflections, training insights. NO humor, NO "Wasted", NO "Irmão do Lamine Yamal".
+
+The ideas should be specific, actionable, and feel natural — like something Miguel would actually want to film.
 
 Return the video ideas as a numbered list.
 Generate in Portuguese Language!
